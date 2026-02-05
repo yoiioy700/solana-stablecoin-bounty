@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Initialize",
+    "success": true,
+    "exists": true,
+    "configPda": "7RDzYmYfq3ANoDYfPZYEvtDQZKHRRaVdzusqYGAJKmk9"
+  },
+  {
+    "name": "UpdateFee",
+    "success": true,
+    "sig": "2VyvowNDtD4HRbDy2cfUs9KVDbVTkEPmpWB8pZuLTV7qHy6hwQhF76ZMaNBokqP9bPe7gmuhpRPD1iNVCvQc4JNW"
+  },
+  {
+    "name": "Pause",
+    "success": true,
+    "sig": "4FHeFFtpMZEWSFgpBQxGhLKkuUy2jGbuKwVNydx6mSnfV5hbZRgAqC4Zfh2FaQUZf8aJyPBTSbRguzndAquJF7gX"
+  },
+  {
+    "name": "Unpause",
+    "success": true,
+    "sig": "5PSnerYeMjaRJXJW75JbnYsWQ2h1HBu17QBZs5ZMG8HCP16ySDCoVBZFHVXWJzrNDsY2jk21ot2dfrZCrUs4djkJ"
+  }
+]
