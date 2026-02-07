@@ -1,106 +1,76 @@
-import { Connection, PublicKey, TransactionSignature } from '@solana/web3.js';
+import { Connection, PublicKey, Keypair, TransactionInstruction, Transaction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 
-// ==================== PRESETS ====================
+// Program IDs
+export const SSS_TOKEN_PROGRAM_ID = new PublicKey('Token11111111111111111111111111111111111111');
+export const SSS_TRANSFER_HOOK_PROGRAM_ID = new PublicKey('Hook111111111111111111111111111111111111111');
 
-export enum Presets {
-  SSS_1 = 'sss-1',  // Basic RBAC stablecoin
-  SSS_2 = 'sss-2',  // Transfer hook with fees
-  SSS_3 = 'sss-3',  // Advanced governance
-}
+// Role constants
+export const ROLE_MASTER = 1;
+export const ROLE_MINTER = 2;
+export const ROLE_BURNER = 4;
+export const ROLE_PAUSER = 8;
+export const ROLE_BLACKLISTER = 16;
+export const ROLE_SEIZER = 32;
 
-// ==================== SOLANA STABLECOIN CONFIG ====================
-
-export interface StablecoinConfig {
-  preset: Presets;
-  name?: string;
-  symbol?: string;
-  decimals?: number;
-  mintAuthority?: PublicKey;
-  freezeAuthority?: PublicKey;
-}
-
-export interface SSS2HookConfig {
-  transferFeeBasisPoints: number;  // Fee in basis points (100 = 1%)
-  maxTransferFee: BN;              // Maximum fee cap in lamports
-  minTransferAmount?: BN;          // Minimum transfer amount
-  blackListEnabled?: boolean;        // Enable blacklist enforcement
-}
-
-export interface CreateStablecoinOptions {
-  preset: Presets;
-  name: string;
-  symbol: string;
-  decimals: number;
-  mintAuthority: PublicKey;
-  freezeAuthority?: PublicKey;
-  // SSS-2 specific
-  hookConfig?: SSS2HookConfig;
-}
-
-// ==================== MINT / BURN ====================
-
-export interface MintOptions {
-  recipient: PublicKey;
-  amount: BN;
-  authority?: PublicKey;
-}
-
-export interface BurnOptions {
-  amount: BN;
-  authority?: PublicKey;
-}
-
-// ==================== FREEZE / THAW ====================
-
-export interface FreezeOptions {
-  account: PublicKey;
-}
-
-export interface ThawOptions {
-  account: PublicKey;
-}
-
-// ==================== WHITELIST / BLACKLIST ====================
-
-export interface WhitelistOptions {
-  address: PublicKey;
-}
-
-export interface BlacklistOptions {
-  address: PublicKey;
-}
-
-// ==================== PERMANENT DELEGATE ====================
-
-export interface PermanentDelegateOptions {
-  delegate?: PublicKey;  // undefined to clear
-}
-
-// ==================== SDK RESULTS ====================
-
-export interface SDKResult<T = TransactionSignature> {
-  success: boolean;
-  signature?: T;
-  error?: string;
-  data?: any;
-}
-
-export interface StablecoinInfo {
+// Types
+export interface StablecoinState {
+  authority: PublicKey;
   mint: PublicKey;
   name: string;
   symbol: string;
   decimals: number;
   totalSupply: BN;
-  isFrozen: boolean;
-  // SSS-2 specific
-  hookProgramId?: PublicKey;
-  hookConfig?: any;
+  isPaused: boolean;
+  features: number;
 }
 
-export interface FeeCalculation {
+export interface RoleAccount {
+  owner: PublicKey;
+  roles: number;
+  stablecoin: PublicKey;
+}
+
+export interface MinterInfo {
+  minter: PublicKey;
+  quota: BN;
+  minted: BN;
+  stablecoin: PublicKey;
+}
+
+export interface SDKResult<T = any> {
+  success: boolean;
+  signature?: string;
+  data?: T;
+  error?: string;
+}
+
+// Events
+export interface StablecoinInitialized {
+  mint: PublicKey;
+  authority: PublicKey;
+  name: string;
+  symbol: string;
+  timestamp: BN;
+}
+
+export interface TokensMinted {
+  minter: PublicKey;
+  recipient: PublicKey;
   amount: BN;
-  fee: BN;
-  netAmount: BN;
-  rateBps: number;
+  timestamp: BN;
+}
+
+export interface TokensBurned {
+  burner: PublicKey;
+  owner: PublicKey;
+  amount: BN;
+  timestamp: BN;
+}
+
+export interface RolesUpdated {
+  authority: PublicKey;
+  target: PublicKey;
+  newRoles: number;
+  timestamp: BN;
 }
