@@ -528,6 +528,38 @@ pub mod sss_token {
 
         Ok(())
     }
+    
+    // === UPDATE SUPPLY CAP ===
+    pub fn update_supply_cap(
+        ctx: Context<UpdateFeatures>,
+        new_cap: u64,
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.authority_role.roles & ROLE_MASTER != 0,
+            StablecoinError::Unauthorized
+        );
+        
+        let stablecoin = &mut ctx.accounts.stablecoin_state;
+        stablecoin.supply_cap = new_cap;
+        
+        Ok(())
+    }
+    
+    // === UPDATE EPOCH QUOTA ===
+    pub fn update_epoch_quota(
+        ctx: Context<UpdateFeatures>,
+        new_quota: u64,
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.authority_role.roles & ROLE_MASTER != 0,
+            StablecoinError::Unauthorized
+        );
+        
+        let stablecoin = &mut ctx.accounts.stablecoin_state;
+        stablecoin.epoch_quota = new_quota;
+        
+        Ok(())
+    }
 }
 
 // === ACCOUNT STRUCTURES FOR INSTRUCTIONS ===
@@ -765,4 +797,18 @@ pub struct TransferAuthority<'info> {
     
     /// CHECK: New authority account
     pub new_authority: AccountInfo<'info>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateFeatures<'info> {
+    pub authority: Signer<'info>,
+    
+    #[account(mut)]
+    pub stablecoin_state: Account<'info, StablecoinState>,
+    
+    #[account(
+        seeds = [b"role", authority.key().as_ref(), stablecoin_state.mint.as_ref()],
+        bump = authority_role.bump,
+    )]
+    pub authority_role: Account<'info, RoleAccount>,
 }
