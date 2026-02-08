@@ -1,62 +1,31 @@
 # SSS Token Demo
 
-## Quick Demo (GIF Placeholder)
+## Terminal Recording (Asciinema)
 
-Below is a representation of the terminal demo. For a live recording, run:
+[![Demo](https://asciinema.org/a/placeholder.svg)](https://asciinema.org/a/placeholder)
 
+**Local Playback:**
 ```bash
-bash scripts/demo.sh
+asciinema play demo/sss-demo.cast
 ```
 
-## Screenshot Walkthrough
-
-### 1. Initialize SSS-1 Stablecoin
-```
-$ sss-token init --preset sss-1 --name "Demo USD" --symbol DUSD
-✓ Stablecoin initialized
-  Mint: DemoToken1111...
-  State: DemoState111111...
+**Upload ke Asciinema.org:**
+```bash
+asciinema upload demo/sss-demo.cast
 ```
 
-### 2. Grant Minter Role
-```
-$ sss-token roles grant-minter 7RDzYmYfq... --quota 1000000
-✓ Minter role granted
-  Quota: 1,000,000 tokens
-```
+**Demo Commands Shown:**
+1. Initialize SSS-1 stablecoin
+2. Grant minter role with quota
+3. Mint tokens
+4. Burn tokens
+5. Enable SSS-2 compliance
+6. Blacklist bad actor
+7. Emergency pause
+8. Asset seizure
+9. Resume operations
 
-### 3. Mint Tokens
-```
-$ sss-token mint 7RDzYmYfq... 500000
-✓ Minted 500,000 tokens
-  Signature: 5PSnerYeMja...
-```
+## Files
 
-### 4. Enable SSS-2 Compliance
-```
-$ sss-token config --enable-transfer-hook
-✓ SSS-2 features enabled
-  Transfer Hook: Active
-  Permanent Delegate: Configured
-```
-
-### 5. Blacklist Bad Actor
-```
-$ sss-token blacklist add BadActor... "Suspicious activity"
-✓ Address blacklisted
-  Reason: Suspicious activity
-```
-
-### 6. Emergency Pause & Seize
-```
-$ sss-token pause
-✓ All operations paused
-
-$ sss-token seize BadActor... --to Treasury...
-✓ Assets seized
-  Recovered: 50,000 tokens
-```
-
-## Full Demo Script
-
-See `scripts/demo.sh` for the complete demonstration script.
+- `sss-demo.cast` — Asciinema recording file (5KB)
+- `demo.sh` — Bash script yang direkam
