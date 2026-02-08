@@ -16,6 +16,10 @@ pub struct StablecoinState {
     pub total_supply: u64,           // Current supply
     pub is_paused: bool,             // Emergency pause
     pub features: u8,                // Feature flags
+    pub supply_cap: u64,             // Maximum supply (0 = unlimited)
+    pub epoch_quota: u64,            // Per-epoch mint limit
+    pub current_epoch_minted: u64,   // This epoch minted amount
+    pub current_epoch_start: i64,    // Epoch start timestamp
     pub bump: u8,                    // PDA bump
 }
 
@@ -67,6 +71,10 @@ pub enum StablecoinError {
     AlreadyInitialized,
     #[msg("Insufficient balance")]
     InsufficientBalance,
+    #[msg("Supply cap exceeded")]
+    SupplyCapExceeded,
+    #[msg("Epoch quota exceeded")]
+    EpochQuotaExceeded,
 }
 
 // === EVENTS ===
@@ -174,6 +182,10 @@ pub mod sss_token {
         stablecoin.total_supply = 0;
         stablecoin.is_paused = false;
         stablecoin.features = 0;
+        stablecoin.supply_cap = 0;          // 0 = unlimited
+        stablecoin.epoch_quota = 0;         // 0 = unlimited
+        stablecoin.current_epoch_minted = 0;
+        stablecoin.current_epoch_start = Clock::get()?.unix_timestamp;
         if enable_transfer_hook {
             stablecoin.features |= 1;
         }
@@ -225,6 +237,29 @@ pub mod sss_token {
                 StablecoinError::QuotaExceeded
             );
         }
+        
+        // Check supply cap
+        let new_supply = stablecoin.total_supply + amount;
+        if stablecoin.supply_cap > 0 {
+            require!(new_supply <= stablecoin.supply_cap, StablecoinError::SupplyCapExceeded);
+        }
+        
+        // Check epoch quota
+        if stablecoin.epoch_quota > 0 {
+            let current_time = Clock::get()?.unix_timestamp;
+            let epoch_elapsed = current_time - stablecoin.current_epoch_start;
+            
+            // If epoch passed (24 hours = 86400 seconds), reset
+            if epoch_elapsed >= 86400 {
+                ctx.accounts.stablecoin_state.current_epoch_minted = 0;
+                ctx.accounts.stablecoin_state.current_epoch_start = current_time;
+            }
+            
+            require!(
+                ctx.accounts.stablecoin_state.current_epoch_minted + amount <= stablecoin.epoch_quota,
+                StablecoinError::EpochQuotaExceeded
+            );
+        }
 
         // CPI to mint tokens
         token_2022::mint_to(
@@ -251,6 +286,11 @@ pub mod sss_token {
             minter_info.minted = minter_info.minted.checked_add(amount)
                 .ok_or(StablecoinError::MathOverflow)?;
         }
+        
+        // Update epoch minted
+        stablecoin_mut.current_epoch_minted = stablecoin_mut.current_epoch_minted
+            .checked_add(amount)
+            .ok_or(StablecoinError::MathOverflow)?;
 
         emit!(TokensMinted {
             minter: ctx.accounts.minter.key(),
