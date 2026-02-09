@@ -40,6 +40,26 @@ pub struct MinterInfo {
     pub bump: u8,                    // PDA bump
 }
 
+#[account]
+pub struct MultisigConfig {
+    pub stablecoin: Pubkey,          // Associated stablecoin
+    pub threshold: u8,               // Required approvals
+    pub signers: Vec<Pubkey>,        // Authorized signers
+    pub bump: u8,
+}
+
+#[account]
+pub struct MultisigProposal {
+    pub config: Pubkey,              // Associated config
+    pub proposer: Pubkey,            // Who proposed
+    pub instruction_data: Vec<u8>,   // Serialized instruction
+    pub approvals: Vec<Pubkey>,        // Who approved
+    pub executed: bool,              // Already executed?
+    pub created_at: i64,               // Proposal time
+    pub expires_at: i64,             // Expiration time
+    pub bump: u8,
+}
+
 // === ROLE CONSTANTS ===
 pub const ROLE_MASTER: u8 = 1;      // Full control
 pub const ROLE_MINTER: u8 = 2;      // Can mint
@@ -157,6 +177,29 @@ pub struct BatchMinted {
     pub minter: Pubkey,
     pub recipients: u16,
     pub total_amount: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct MultisigProposalCreated {
+    pub proposal: Pubkey,
+    pub proposer: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct MultisigProposalApproved {
+    pub proposal: Pubkey,
+    pub approver: Pubkey,
+    pub approvals: u8,
+    pub threshold: u8,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct MultisigProposalExecuted {
+    pub proposal: Pubkey,
+    pub executor: Pubkey,
     pub timestamp: i64,
 }
 
@@ -682,6 +725,112 @@ pub mod sss_token {
         
         Ok(())
     }
+    
+    // === MULTISIG: INITIALIZE CONFIG ===
+    pub fn initialize_multisig(
+        ctx: Context<InitializeMultisig>,
+        threshold: u8,
+        signers: Vec<Pubkey>,
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.authority_role.roles & ROLE_MASTER != 0,
+            StablecoinError::Unauthorized
+        );
+        require!(threshold > 0 && threshold <= signers.len() as u8, StablecoinError::InvalidAmount);
+        require!(signers.len() <= 10, StablecoinError::InvalidAmount);
+        
+        let config = &mut ctx.accounts.multisig_config;
+        config.stablecoin = ctx.accounts.stablecoin_state.key();
+        config.threshold = threshold;
+        config.signers = signers;
+        config.bump = ctx.bumps.multisig_config;
+        
+        Ok(())
+    }
+    
+    // === MULTISIG: CREATE PROPOSAL ===
+    pub fn create_proposal(
+        ctx: Context<CreateProposal>,
+        instruction_data: Vec<u8>,
+        expires_in: i64,
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.multisig_config.signers.contains(&ctx.accounts.proposer.key()),
+            StablecoinError::Unauthorized
+        );
+        
+        let proposal = &mut ctx.accounts.proposal;
+        proposal.config = ctx.accounts.multisig_config.key();
+        proposal.proposer = ctx.accounts.proposer.key();
+        proposal.instruction_data = instruction_data;
+        proposal.approvals = vec![];
+        proposal.executed = false;
+        proposal.created_at = Clock::get()?.unix_timestamp;
+        proposal.expires_at = proposal.created_at + expires_in;
+        proposal.bump = ctx.bumps.proposal;
+        
+        emit!(MultisigProposalCreated {
+            proposal: proposal.key(),
+            proposer: ctx.accounts.proposer.key(),
+            timestamp: proposal.created_at,
+        });
+        
+        Ok(())
+    }
+    
+    // === MULTISIG: APPROVE PROPOSAL ===
+    pub fn approve_proposal(ctx: Context<ApproveProposal>) -> Result<()> {
+        let config = &ctx.accounts.multisig_config;
+        let proposal = &mut ctx.accounts.proposal;
+        
+        require!(
+            Clock::get()?.unix_timestamp < proposal.expires_at,
+            StablecoinError::InvalidAmount
+        );
+        require!(!proposal.executed, StablecoinError::InvalidAmount);
+        require!(
+            config.signers.contains(&ctx.accounts.signer.key()),
+            StablecoinError::Unauthorized
+        );
+        require!(
+            !proposal.approvals.contains(&ctx.accounts.signer.key()),
+            StablecoinError::InvalidAmount
+        );
+        
+        proposal.approvals.push(ctx.accounts.signer.key());
+        
+        emit!(MultisigProposalApproved {
+            proposal: proposal.key(),
+            approver: ctx.accounts.signer.key(),
+            approvals: proposal.approvals.len() as u8,
+            threshold: config.threshold,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+        
+        Ok(())
+    }
+    
+    // === MULTISIG: EXECUTE PROPOSAL ===
+    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+        let config = &ctx.accounts.multisig_config;
+        let proposal = &mut ctx.accounts.proposal;
+        
+        require!(
+            proposal.approvals.len() as u8 >= config.threshold,
+            StablecoinError::Unauthorized
+        );
+        require!(!proposal.executed, StablecoinError::InvalidAmount);
+        
+        proposal.executed = true;
+        
+        emit!(MultisigProposalExecuted {
+            proposal: proposal.key(),
+            executor: ctx.accounts.executor.key(),
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+        
+        Ok(())
+    }
 }
 
 // === ACCOUNT STRUCTURES FOR INSTRUCTIONS ===
@@ -979,4 +1128,91 @@ pub struct BatchMint<'info> {
     pub mint_authority: AccountInfo<'info>,
     
     pub token_program: Program<'info, Token2022>,
+}
+
+// === MULTISIG ACCOUNT STRUCTS ===
+
+#[derive(Accounts)]
+pub struct InitializeMultisig<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    
+    #[account(mut)]
+    pub stablecoin_state: Account<'info, StablecoinState>,
+    
+    #[account(
+        seeds = [b"role", authority.key().as_ref(), stablecoin_state.mint.as_ref()],
+        bump = authority_role.bump,
+    )]
+    pub authority_role: Account<'info, RoleAccount>,
+    
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 200,
+        seeds = [b"multisig", stablecoin_state.key().as_ref()],
+        bump
+    )]
+    pub multisig_config: Account<'info, MultisigConfig>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CreateProposal<'info> {
+    #[account(mut)]
+    pub proposer: Signer<'info>,
+    
+    #[account(
+        seeds = [b"multisig", stablecoin_state.key().as_ref()],
+        bump = multisig_config.bump,
+    )]
+    pub multisig_config: Account<'info, MultisigConfig>,
+    
+    pub stablecoin_state: Account<'info, StablecoinState>,
+    
+    #[account(
+        init,
+        payer = proposer,
+        space = 8 + 500,
+        seeds = [b"proposal", multisig_config.key().as_ref(), proposer.key().as_ref()],
+        bump
+    )]
+    pub proposal: Account<'info, MultisigProposal>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ApproveProposal<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    
+    #[account(
+        seeds = [b"multisig", stablecoin_state.key().as_ref()],
+        bump = multisig_config.bump,
+    )]
+    pub multisig_config: Account<'info, MultisigConfig>,
+    
+    pub stablecoin_state: Account<'info, StablecoinState>,
+    
+    #[account(mut)]
+    pub proposal: Account<'info, MultisigProposal>,
+}
+
+#[derive(Accounts)]
+pub struct ExecuteProposal<'info> {
+    #[account(mut)]
+    pub executor: Signer<'info>,
+    
+    #[account(
+        seeds = [b"multisig", stablecoin_state.key().as_ref()],
+        bump = multisig_config.bump,
+    )]
+    pub multisig_config: Account<'info, MultisigConfig>,
+    
+    pub stablecoin_state: Account<'info, StablecoinState>,
+    
+    #[account(mut)]
+    pub proposal: Account<'info, MultisigProposal>,
 }
