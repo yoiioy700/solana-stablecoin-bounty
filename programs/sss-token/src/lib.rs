@@ -812,3 +812,17 @@ pub struct UpdateFeatures<'info> {
     )]
     pub authority_role: Account<'info, RoleAccount>,
 }
+
+#[derive(Accounts)]
+pub struct UpdateFeatures<'info> {
+    pub authority: Signer<'info>,
+    
+    #[account(mut)]
+    pub stablecoin_state: Account<'info, StablecoinState>,
+    
+    #[account(
+        seeds = [b"role", authority.key().as_ref(), stablecoin_state.mint.as_ref()],
+        bump = authority_role.bump,
+    )]
+    pub authority_role: Account<'info, RoleAccount>,
+}
