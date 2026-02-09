@@ -560,6 +560,32 @@ pub mod sss_token {
         
         Ok(())
     }
+    
+    // === ENABLE MINT CLOSE AUTHORITY ===
+    pub fn enable_mint_close_authority(ctx: Context<UpdateFeatures>) -> Result<()> {
+        require!(
+            ctx.accounts.authority_role.roles & ROLE_MASTER != 0,
+            StablecoinError::Unauthorized
+        );
+        
+        let stablecoin = &mut ctx.accounts.stablecoin_state;
+        stablecoin.features |= 4; // Bit 2 = MintCloseAuthority
+        
+        Ok(())
+    }
+    
+    // === ENABLE DEFAULT ACCOUNT STATE ===
+    pub fn enable_default_account_state(ctx: Context<UpdateFeatures>) -> Result<()> {
+        require!(
+            ctx.accounts.authority_role.roles & ROLE_MASTER != 0,
+            StablecoinError::Unauthorized
+        );
+        
+        let stablecoin = &mut ctx.accounts.stablecoin_state;
+        stablecoin.features |= 8; // Bit 3 = DefaultAccountState
+        
+        Ok(())
+    }
 }
 
 // === ACCOUNT STRUCTURES FOR INSTRUCTIONS ===
