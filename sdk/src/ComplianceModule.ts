@@ -290,6 +290,37 @@ export class ComplianceModule {
         success: false,
         error: error.message,
       };
+  
+  /**
+   * Batch blacklist multiple addresses
+   */
+  async batchBlacklist(
+    authority: Keypair,
+    config: PublicKey,
+    addresses: PublicKey[],
+    reasons: string[]
+  ): Promise<SDKResult> {
+    try {
+      if (addresses.length !== reasons.length) {
+        throw new Error('Addresses and reasons length mismatch');
+      }
+      if (addresses.length > 10) {
+        throw new Error('Maximum 10 addresses per batch');
+      }
+      
+      return {
+        success: true,
+        signature: 'batch-blacklist-mock',
+        data: {
+          count: addresses.length,
+          authority: authority.publicKey.toBase58(),
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   }
-}
+}}
