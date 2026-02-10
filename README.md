@@ -32,6 +32,11 @@ anchor deploy --provider.cluster devnet
 - ✅ Account freeze/thaw
 - ✅ Emergency pause/unpause
 - ✅ Minter quotas with overflow protection
+- ✅ **Supply cap enforcement** (0 = unlimited)
+- ✅ **Epoch quota with 24h reset**
+- ✅ **Token-2022 extensions** (MintCloseAuthority, DefaultAccountState)
+- ✅ **🔥 Batch mint** — mint to multiple recipients
+- ✅ **🔥 Multisig governance** — proposal + approval + execute flow
 
 ### SSS-2: Compliance Transfer Hook
 - ✅ Transfer fees (basis points + max cap)
@@ -40,7 +45,8 @@ anchor deploy --provider.cluster devnet
 - ✅ Permanent delegate (bypass all restrictions)
 - ✅ Asset seizure from blacklisted accounts
 - ✅ Emergency pause
-- ✅ 12 audit event types
+- ✅ **🔥 Batch blacklist** — batch compliance operations
+- ✅ 13+ audit event types
 
 ### Backend Services (Advanced Infrastructure)
 - 🔥 **PostgreSQL** (vs SQLite in competitors) — production-grade database
@@ -50,9 +56,10 @@ anchor deploy --provider.cluster devnet
 - 🔥 **REST API** — comprehensive endpoints
 
 ### SDK & CLI
-- 🔥 **3 SDK modules** — SolanaStablecoin, ComplianceModule, RoleManager
+- 🔥 **4 SDK modules** — SolanaStablecoin, ComplianceModule, RoleManager, **MultisigModule** [NEW]
+- 🔥 **Batch operations** — batch_mint, batch_blacklist
 - 🔥 **13 CLI commands** — more than competitors (10)
-- 🔥 **5 step-by-step examples** — full feature coverage
+- 🔥 **8 step-by-step examples** — full feature coverage [NEW: 06, 07, 08]
 - 🔥 **TypeScript native** — full type safety
 
 ## 📊 Architecture
