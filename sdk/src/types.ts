@@ -74,3 +74,50 @@ export interface RolesUpdated {
   newRoles: number;
   timestamp: BN;
 }
+
+
+// Multisig Types
+export interface MultisigConfig {
+  stablecoin: PublicKey;
+  threshold: number;
+  signers: PublicKey[];
+}
+
+export interface MultisigProposal {
+  config: PublicKey;
+  proposer: PublicKey;
+  instructionData: Buffer;
+  approvals: PublicKey[];
+  executed: boolean;
+  createdAt: BN;
+  expiresAt: BN;
+}
+
+// Multisig Events
+export interface MultisigProposalCreated {
+  proposal: PublicKey;
+  proposer: PublicKey;
+  timestamp: BN;
+}
+
+export interface MultisigProposalApproved {
+  proposal: PublicKey;
+  approver: PublicKey;
+  approvals: number;
+  threshold: number;
+  timestamp: BN;
+}
+
+export interface MultisigProposalExecuted {
+  proposal: PublicKey;
+  executor: PublicKey;
+  timestamp: BN;
+}
+
+// Batch Operations
+export interface BatchMinted {
+  minter: PublicKey;
+  recipients: number;
+  totalAmount: BN;
+  timestamp: BN;
+}

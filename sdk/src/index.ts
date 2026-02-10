@@ -5,6 +5,7 @@
 export { SolanaStablecoin } from './SolanaStablecoin';
 export { ComplianceModule } from './ComplianceModule';
 export { RoleManager } from './RoleManager';
+export { MultisigModule } from './MultisigModule';
 
 // Types
 export {
@@ -22,12 +23,18 @@ export {
   StablecoinState,
   RoleAccount,
   MinterInfo,
+  MultisigConfig,
+  MultisigProposal,
   SDKResult,
   StablecoinInitialized,
   TokensMinted,
   TokensBurned,
   RolesUpdated,
   MinterQuotaUpdated,
+  BatchMinted,
+  MultisigProposalCreated,
+  MultisigProposalApproved,
+  MultisigProposalExecuted,
 } from './types';
 
 // Re-export commonly used types from web3.js

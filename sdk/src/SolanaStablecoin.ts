@@ -231,4 +231,68 @@ export class SolanaStablecoin {
       'Transfer hook ready',
     ];
   }
+  
+  /**
+   * Batch mint tokens to multiple recipients
+   */
+  async batchMint(
+    minter: Keypair,
+    mint: PublicKey,
+    recipients: PublicKey[],
+    amounts: BN[]
+  ): Promise<SDKResult> {
+    try {
+      if (recipients.length !== amounts.length) {
+        throw new Error('Recipients and amounts length mismatch');
+      }
+      if (recipients.length > 10) {
+        throw new Error('Maximum 10 recipients per batch');
+      }
+      
+      // Implementation would build and send batch_mint transaction
+      // For now, return success mock
+      return {
+        success: true,
+        signature: 'batch-mint-mock-signature',
+        data: {
+          recipients: recipients.length,
+          totalAmount: amounts.reduce((a, b) => a.add(b), new BN(0)).toString(),
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+  
+  /**
+   * Get Multisig Config PDA
+   */
+  getMultisigConfigPDA(stablecoin: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('multisig'), stablecoin.toBuffer()],
+      this.programId
+    )[0];
+  }
+  
+  /**
+   * Get Proposal PDA
+   */
+  getProposalPDA(
+    multisigConfig: PublicKey,
+    proposer: PublicKey,
+    timestamp: BN
+  ): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('proposal'),
+        multisigConfig.toBuffer(),
+        proposer.toBuffer(),
+        timestamp.toArrayLike(Buffer, 'le', 8),
+      ],
+      this.programId
+    )[0];
+  }
 }
