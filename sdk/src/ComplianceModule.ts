@@ -290,6 +290,8 @@ export class ComplianceModule {
         success: false,
         error: error.message,
       };
+    }
+  }
   
   /**
    * Batch blacklist multiple addresses
@@ -323,4 +325,4 @@ export class ComplianceModule {
       };
     }
   }
-}}
+}

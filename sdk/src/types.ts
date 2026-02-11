@@ -121,3 +121,35 @@ export interface BatchMinted {
   totalAmount: BN;
   timestamp: BN;
 }
+
+
+// SSS1 Types
+export interface StablecoinInfo {
+  mint: PublicKey;
+  authority?: PublicKey;
+  totalSupply: BN;
+  isPaused?: boolean;
+  decimals: number;
+  name?: string;
+  symbol?: string;
+  isFrozen?: boolean;
+}
+
+// SSS2 Types
+export interface SSS2HookConfig {
+  stablecoin: PublicKey;
+  authority: PublicKey;
+  transferFeeBasisPoints: number;
+  maxTransferFee: BN;
+  minTransferAmount: BN;
+  isPaused: boolean;
+  blacklistEnabled: boolean;
+}
+
+export interface FeeCalculation {
+  fee: BN;
+  netAmount: BN;
+  rateBps: number;
+  basisPoints?: number;
+  amount?: BN;
+}

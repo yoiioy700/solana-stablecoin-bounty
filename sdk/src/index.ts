@@ -30,7 +30,6 @@ export {
   TokensMinted,
   TokensBurned,
   RolesUpdated,
-  MinterQuotaUpdated,
   BatchMinted,
   MultisigProposalCreated,
   MultisigProposalApproved,
