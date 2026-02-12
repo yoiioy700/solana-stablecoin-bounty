@@ -132,7 +132,6 @@ pub struct BatchBlacklistAdded {
     pub timestamp: i64,
 }
 
-
 /// ============ PROGRAM MODULE ============
 
 #[program]
