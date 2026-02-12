@@ -173,7 +173,6 @@ pub struct AuthorityTransferred {
 }
 
 #[event]
-#[derive(Accounts)]
 pub struct BatchMinted {
     pub minter: Pubkey,
     pub recipients: u16,
@@ -205,7 +204,7 @@ pub struct MultisigProposalExecuted {
 }
 
 // === PROGRAM ===
-declare_id!("Token11111111111111111111111111111111111111"); // Placeholder
+declare_id!("b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK");
 
 #[program]
 pub mod sss_token {
