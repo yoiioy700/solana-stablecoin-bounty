@@ -5,7 +5,7 @@ use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::{Mint as InterfaceMint, TokenAccount as InterfaceTokenAccount};
 
 /// ============ PROGRAM ID ============
-declare_id!("Hook111111111111111111111111111111111111111");
+declare_id!("FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD");
 
 /// ============ STATE STRUCTURES ============
 
@@ -132,12 +132,6 @@ pub struct BatchBlacklistAdded {
     pub timestamp: i64,
 }
 
-#[event]
-pub struct BatchBlacklistAdded {
-    pub authority: Pubkey,
-    pub count: u16,
-    pub timestamp: i64,
-}
 
 /// ============ PROGRAM MODULE ============
 
