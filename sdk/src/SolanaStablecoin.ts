@@ -1,34 +1,90 @@
 import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
+import { BN, Program, AnchorProvider, web3 } from '@coral-xyz/anchor';
 import {
   SSS_TOKEN_PROGRAM_ID,
+  SSS_TRANSFER_HOOK_PROGRAM_ID,
   StablecoinState,
   RoleAccount,
   MinterInfo,
   SDKResult,
   ROLE_MASTER,
+  ROLE_MINTER,
+  ROLE_BURNER,
+  ROLE_PAUSER,
 } from './types';
+import { SssToken } from '../target/types/sss_token';
+import { SssTransferHook } from '../target/types/sss_transfer_hook';
+import * as anchor from '@coral-xyz/anchor';
 
 /**
- * Core SDK for managing SSS-1 stablecoins
+ * Core SDK for managing SSS-1 and SSS-2 stablecoins
+ * 
+ * Usage:
+ * ```typescript
+ * const sdk = new SolanaStablecoin(connection, wallet);
+ * 
+ * // Initialize SSS-1
+ * const { mint, stablecoin } = await sdk.initialize({
+ *   name: 'My USD',
+ *   symbol: 'MUSD',
+ *   decimals: 6,
+ *   authority: keypair,
+ * });
+ * 
+ * // Mint tokens
+ * await sdk.mint({
+ *   stablecoin,
+ *   minter: keypair,
+ *   recipient: userPublicKey,
+ *   amount: new BN(1000000),
+ * });
+ * ```
  */
 export class SolanaStablecoin {
   private connection: Connection;
-  private programId: PublicKey;
+  private provider: AnchorProvider;
+  private program: Program<SssToken>;
+  private hookProgram: Program<SssTransferHook>;
   
-  constructor(connection: Connection, programId?: PublicKey) {
+  constructor(
+    connection: Connection,
+    wallet: anchor.Wallet,
+    programId?: PublicKey,
+    hookProgramId?: PublicKey
+  ) {
     this.connection = connection;
-    this.programId = programId || SSS_TOKEN_PROGRAM_ID;
+    this.provider = new AnchorProvider(connection, wallet, {
+      commitment: 'confirmed',
+    });
+    
+    // Initialize programs with IDs
+    const tokenProgramId = programId || SSS_TOKEN_PROGRAM_ID;
+    const transferHookId = hookProgramId || SSS_TRANSFER_HOOK_PROGRAM_ID;
+    
+    // Load IDL (in real implementation, import from target)
+    // @ts-ignore
+    this.program = new Program(require('../target/idl/sss_token.json'), tokenProgramId, this.provider);
+    // @ts-ignore
+    this.hookProgram = new Program(require('../target/idl/sss_transfer_hook.json'), transferHookId, this.provider);
   }
   
   /**
    * Get stablecoin state PDA
    */
   getStablecoinPDA(mint: PublicKey): PublicKey {
-    // Seeds: [b"stablecoin", mint]
     return PublicKey.findProgramAddressSync(
       [Buffer.from('stablecoin'), mint.toBuffer()],
-      this.programId
+      this.program.programId
+    )[0];
+  }
+  
+  /**
+   * Get mint PDA from authority
+   */
+  getMintPDA(stablecoin: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('mint'), stablecoin.toBuffer()],
+      this.program.programId
     )[0];
   }
   
@@ -36,10 +92,9 @@ export class SolanaStablecoin {
    * Get role account PDA
    */
   getRolePDA(owner: PublicKey, mint: PublicKey): PublicKey {
-    // Seeds: [b"role", owner, mint]
     return PublicKey.findProgramAddressSync(
       [Buffer.from('role'), owner.toBuffer(), mint.toBuffer()],
-      this.programId
+      this.program.programId
     )[0];
   }
   
@@ -47,15 +102,14 @@ export class SolanaStablecoin {
    * Get minter info PDA
    */
   getMinterPDA(minter: PublicKey, mint: PublicKey): PublicKey {
-    // Seeds: [b"minter", minter, mint]
     return PublicKey.findProgramAddressSync(
       [Buffer.from('minter'), minter.toBuffer(), mint.toBuffer()],
-      this.programId
+      this.program.programId
     )[0];
   }
   
   /**
-   * Initialize a new stablecoin
+   * Initialize a new stablecoin (SSS-1 or SSS-2)
    */
   async initialize(params: {
     name: string;
@@ -64,20 +118,55 @@ export class SolanaStablecoin {
     authority: Keypair;
     enableTransferHook?: boolean;
     enablePermanentDelegate?: boolean;
-  }): Promise<SDKResult<{ mint: PublicKey; stablecoin: PublicKey }>> {
+  }): Promise<SDKResult<{ mint: PublicKey; stablecoin: PublicKey; signature: string }>> {
     try {
-      // Implementation would create mint and initialize here
-      const mint = Keypair.generate().publicKey;
-      const stablecoin = this.getStablecoinPDA(mint);
+      const { name, symbol, decimals, authority, enableTransferHook = false, enablePermanentDelegate = false } = params;
+      
+      // Validate inputs
+      if (name.length > 32) throw new Error('Name must be 32 characters or less');
+      if (symbol.length > 10) throw new Error('Symbol must be 10 characters or less');
+      if (decimals > 9) throw new Error('Decimals must be 9 or less');
+      
+      // Generate mint keypair
+      const mintKeypair = Keypair.generate();
+      
+      // Derive PDAs
+      const stablecoin = this.getStablecoinPDA(mintKeypair.publicKey);
+      const masterRole = this.getRolePDA(authority.publicKey, mintKeypair.publicKey);
+      
+      // Get Associated Token Address for mint authority
+      const mintAuthority = await anchor.utils.token.associatedAddress({
+        mint: mintKeypair.publicKey,
+        owner: authority.publicKey,
+      });
+      
+      // Build transaction
+      const tx = await this.program.methods
+        .initialize(name, symbol, decimals, enableTransferHook, enablePermanentDelegate)
+        .accounts({
+          authority: authority.publicKey,
+          stablecoinState: stablecoin,
+          masterRole: masterRole,
+          mint: mintKeypair.publicKey,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          systemProgram: web3.SystemProgram.programId,
+          rent: web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([authority, mintKeypair])
+        .rpc();
       
       return {
         success: true,
-        data: { mint, stablecoin },
+        signature: tx,
+        data: {
+          mint: mintKeypair.publicKey,
+          stablecoin,
+        },
       };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
@@ -90,14 +179,50 @@ export class SolanaStablecoin {
     minter: Keypair;
     recipient: PublicKey;
     amount: BN;
-  }): Promise<SDKResult> {
+  }): Promise<SDKResult<{ signature: string }>> {
     try {
-      // Build and send mint instruction
-      return { success: true };
+      const { stablecoin, minter, recipient, amount } = params;
+      
+      // Fetch state to get mint
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      const mint = state.mint;
+      
+      // Derive accounts
+      const minterRole = this.getRolePDA(minter.publicKey, mint);
+      const minterInfo = this.getMinterPDA(minter.publicKey, mint);
+      
+      // Get recipient ATA
+      const recipientAccount = await anchor.utils.token.associatedAddress({
+        mint,
+        owner: recipient,
+      });
+      
+      // Build transaction
+      const tx = await this.program.methods
+        .mint(amount)
+        .accounts({
+          minter: minter.publicKey,
+          stablecoinState: stablecoin,
+          minterRole: minterRole,
+          minterInfo: minterInfo,
+          mint: mint,
+          recipientAccount: recipientAccount,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+          systemProgram: web3.SystemProgram.programId,
+          rent: web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([minter])
+        .rpc();
+      
+      return {
+        success: true,
+        signature: tx,
+      };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
@@ -110,13 +235,46 @@ export class SolanaStablecoin {
     burner: Keypair;
     tokenAccount: PublicKey;
     amount: BN;
-  }): Promise<SDKResult> {
+  }): Promise<SDKResult<{ signature: string }>> {
     try {
-      return { success: true };
+      const { stablecoin, burner, tokenAccount, amount } = params;
+      
+      // Fetch state
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      const mint = state.mint;
+      
+      // Derive accounts
+      const burnerRole = this.getRolePDA(burner.publicKey, mint);
+      
+      // Get burn authority PDA
+      const [burnAuthority] = PublicKey.findProgramAddressSync(
+        [Buffer.from('burn_authority'), stablecoin.toBuffer()],
+        this.program.programId
+      );
+      
+      // Build transaction
+      const tx = await this.program.methods
+        .burn(amount)
+        .accounts({
+          burner: burner.publicKey,
+          stablecoinState: stablecoin,
+          burnerRole: burnerRole,
+          mint: mint,
+          tokenAccount: tokenAccount,
+          burnAuthority: burnAuthority,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([burner])
+        .rpc();
+      
+      return {
+        success: true,
+        signature: tx,
+      };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
@@ -128,13 +286,42 @@ export class SolanaStablecoin {
     stablecoin: PublicKey;
     pauser: Keypair;
     tokenAccount: PublicKey;
-  }): Promise<SDKResult> {
+  }): Promise<SDKResult<{ signature: string }>> {
     try {
-      return { success: true };
+      const { stablecoin, pauser, tokenAccount } = params;
+      
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      const mint = state.mint;
+      
+      const pauserRole = this.getRolePDA(pauser.publicKey, mint);
+      
+      const [freezeAuthority] = PublicKey.findProgramAddressSync(
+        [Buffer.from('freeze_authority'), stablecoin.toBuffer()],
+        this.program.programId
+      );
+      
+      const tx = await this.program.methods
+        .freezeAccount()
+        .accounts({
+          pauser: pauser.publicKey,
+          stablecoinState: stablecoin,
+          pauserRole: pauserRole,
+          mint: mint,
+          tokenAccount: tokenAccount,
+          freezeAuthority: freezeAuthority,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([pauser])
+        .rpc();
+      
+      return {
+        success: true,
+        signature: tx,
+      };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
@@ -146,13 +333,42 @@ export class SolanaStablecoin {
     stablecoin: PublicKey;
     pauser: Keypair;
     tokenAccount: PublicKey;
-  }): Promise<SDKResult> {
+  }): Promise<SDKResult<{ signature: string }>> {
     try {
-      return { success: true };
+      const { stablecoin, pauser, tokenAccount } = params;
+      
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      const mint = state.mint;
+      
+      const pauserRole = this.getRolePDA(pauser.publicKey, mint);
+      
+      const [freezeAuthority] = PublicKey.findProgramAddressSync(
+        [Buffer.from('freeze_authority'), stablecoin.toBuffer()],
+        this.program.programId
+      );
+      
+      const tx = await this.program.methods
+        .thawAccount()
+        .accounts({
+          pauser: pauser.publicKey,
+          stablecoinState: stablecoin,
+          pauserRole: pauserRole,
+          mint: mint,
+          tokenAccount: tokenAccount,
+          freezeAuthority: freezeAuthority,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([pauser])
+        .rpc();
+      
+      return {
+        success: true,
+        signature: tx,
+      };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
@@ -163,13 +379,33 @@ export class SolanaStablecoin {
   async pause(params: {
     stablecoin: PublicKey;
     pauser: Keypair;
-  }): Promise<SDKResult> {
+  }): Promise<SDKResult<{ signature: string }>> {
     try {
-      return { success: true };
+      const { stablecoin, pauser } = params;
+      
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      const mint = state.mint;
+      
+      const pauserRole = this.getRolePDA(pauser.publicKey, mint);
+      
+      const tx = await this.program.methods
+        .setPaused(true)
+        .accounts({
+          pauser: pauser.publicKey,
+          stablecoinState: stablecoin,
+          pauserRole: pauserRole,
+        })
+        .signers([pauser])
+        .rpc();
+      
+      return {
+        success: true,
+        signature: tx,
+      };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
@@ -180,13 +416,76 @@ export class SolanaStablecoin {
   async unpause(params: {
     stablecoin: PublicKey;
     pauser: Keypair;
-  }): Promise<SDKResult> {
+  }): Promise<SDKResult<{ signature: string }>> {
     try {
-      return { success: true };
+      const { stablecoin, pauser } = params;
+      
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      const mint = state.mint;
+      
+      const pauserRole = this.getRolePDA(pauser.publicKey, mint);
+      
+      const tx = await this.program.methods
+        .setPaused(false)
+        .accounts({
+          pauser: pauser.publicKey,
+          stablecoinState: stablecoin,
+          pauserRole: pauserRole,
+        })
+        .signers([pauser])
+        .rpc();
+      
+      return {
+        success: true,
+        signature: tx,
+      };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
+      };
+    }
+  }
+  
+  /**
+   * Assign roles to an address
+   */
+  async updateRoles(params: {
+    stablecoin: PublicKey;
+    authority: Keypair;
+    target: PublicKey;
+    roles: number;
+  }): Promise<SDKResult<{ signature: string }>> {
+    try {
+      const { stablecoin, authority, target, roles } = params;
+      
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      const mint = state.mint;
+      
+      const authorityRole = this.getRolePDA(authority.publicKey, mint);
+      const targetRole = this.getRolePDA(target, mint);
+      
+      const tx = await this.program.methods
+        .updateRoles(roles)
+        .accounts({
+          authority: authority.publicKey,
+          stablecoinState: stablecoin,
+          authorityRole: authorityRole,
+          target: target,
+          targetRole: targetRole,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .signers([authority])
+        .rpc();
+      
+      return {
+        success: true,
+        signature: tx,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || error.toString(),
       };
     }
   }
@@ -196,40 +495,37 @@ export class SolanaStablecoin {
    */
   async getState(stablecoin: PublicKey): Promise<SDKResult<StablecoinState>> {
     try {
-      // Fetch account data
+      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      
       return {
         success: true,
-        data: {
-          authority: PublicKey.default,
-          mint: PublicKey.default,
-          name: 'Test',
-          symbol: 'TEST',
-          decimals: 6,
-          totalSupply: new BN(0),
-          isPaused: false,
-          features: 0,
-        },
+        data: state as unknown as StablecoinState,
       };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
   
   /**
-   * Get supported features
+   * Fetch role account
    */
-  getFeatures(): string[] {
-    return [
-      'Token-2022 support',
-      'RBAC roles',
-      'Mint/Burn',
-      'Freeze/Thaw',
-      'Pause/Unpause',
-      'Transfer hook ready',
-    ];
+  async getRole(rolePDA: PublicKey): Promise<SDKResult<RoleAccount>> {
+    try {
+      const role = await this.program.account.roleAccount.fetch(rolePDA);
+      
+      return {
+        success: true,
+        data: role as unknown as RoleAccount,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || error.toString(),
+      };
+    }
   }
   
   /**
@@ -240,7 +536,7 @@ export class SolanaStablecoin {
     mint: PublicKey,
     recipients: PublicKey[],
     amounts: BN[]
-  ): Promise<SDKResult> {
+  ): Promise<SDKResult<{ signature: string; recipients: number; totalAmount: string }>> {
     try {
       if (recipients.length !== amounts.length) {
         throw new Error('Recipients and amounts length mismatch');
@@ -249,50 +545,91 @@ export class SolanaStablecoin {
         throw new Error('Maximum 10 recipients per batch');
       }
       
-      // Implementation would build and send batch_mint transaction
-      // For now, return success mock
+      const stablecoin = this.getStablecoinPDA(mint);
+      const minterRole = this.getRolePDA(minter.publicKey, mint);
+      const minterInfo = this.getMinterPDA(minter.publicKey, mint);
+      
+      const [mintAuthority] = PublicKey.findProgramAddressSync(
+        [Buffer.from('mint_authority'), stablecoin.toBuffer()],
+        this.program.programId
+      );
+      
+      const tx = await this.program.methods
+        .batchMint(recipients, amounts)
+        .accounts({
+          minter: minter.publicKey,
+          stablecoinState: stablecoin,
+          minterRole: minterRole,
+          minterInfo: minterInfo,
+          mint: mint,
+          mintAuthority: mintAuthority,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([minter])
+        .rpc();
+      
+      const totalAmount = amounts.reduce((a, b) => a.add(b), new BN(0));
+      
       return {
         success: true,
-        signature: 'batch-mint-mock-signature',
+        signature: tx,
         data: {
           recipients: recipients.length,
-          totalAmount: amounts.reduce((a, b) => a.add(b), new BN(0)).toString(),
+          totalAmount: totalAmount.toString(),
         },
       };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
+        error: error.message || error.toString(),
       };
     }
   }
   
   /**
-   * Get Multisig Config PDA
+   * Get supported features
    */
-  getMultisigConfigPDA(stablecoin: PublicKey): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from('multisig'), stablecoin.toBuffer()],
-      this.programId
-    )[0];
+  getFeatures(): { sss1: string[]; sss2: string[] } {
+    return {
+      sss1: [
+        'Token-2022 support',
+        'RBAC roles (Master/Minter/Burner/Pauser)',
+        'Mint/Burn with quotas',
+        'Freeze/Thaw accounts',
+        'Pause/Unpause contract',
+        'Minter epoch limits',
+        'Supply cap',
+        'Batch operations',
+      ],
+      sss2: [
+        'Transfer hook enforcement',
+        'Blacklist/Whitelist',
+        'Configurable transfer fees',
+        'Token seizure (permanent delegate)',
+        'Compliance roles (Blacklister, Seizer)',
+        'Multisig support',
+      ],
+    };
   }
   
   /**
-   * Get Proposal PDA
+   * Check if stablecoin has SSS-2 features
    */
-  getProposalPDA(
-    multisigConfig: PublicKey,
-    proposer: PublicKey,
-    timestamp: BN
-  ): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('proposal'),
-        multisigConfig.toBuffer(),
-        proposer.toBuffer(),
-        timestamp.toArrayLike(Buffer, 'le', 8),
-      ],
-      this.programId
-    )[0];
+  hasSSS2Features(stablecoinState: StablecoinState): boolean {
+    return (stablecoinState.features & 1) !== 0 || (stablecoinState.features & 2) !== 0;
+  }
+  
+  /**
+   * Decode roles bitmask to human-readable array
+   */
+  decodeRoles(roles: number): string[] {
+    const roleNames: string[] = [];
+    if (roles & ROLE_MASTER) roleNames.push('MASTER');
+    if (roles & ROLE_MINTER) roleNames.push('MINTER');
+    if (roles & ROLE_BURNER) roleNames.push('BURNER');
+    if (roles & ROLE_PAUSER) roleNames.push('PAUSER');
+    if (roles & 16) roleNames.push('BLACKLISTER');
+    if (roles & 32) roleNames.push('SEIZER');
+    return roleNames;
   }
 }
