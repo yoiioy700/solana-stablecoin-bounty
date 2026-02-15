@@ -6,7 +6,7 @@
 
 Production-ready stablecoin implementation with Role-Based Access Control (SSS-1) and advanced compliance features (SSS-2) using Solana Token-2022 transfer hooks.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Clone repository
@@ -23,46 +23,46 @@ anchor test
 anchor deploy --provider.cluster devnet
 ```
 
-## ✨ Features
+## Features
 
 ### SSS-1: Basic RBAC Stablecoin
-- ✅ Token-2022 native support
-- ✅ 6 RBAC roles (Master, Minter, Burner, Pauser, Blacklister, Seizer)
-- ✅ Role-based mint/burn operations
-- ✅ Account freeze/thaw
-- ✅ Emergency pause/unpause
-- ✅ Minter quotas with overflow protection
-- ✅ **Supply cap enforcement** (0 = unlimited)
-- ✅ **Epoch quota with 24h reset**
-- ✅ **Token-2022 extensions** (MintCloseAuthority, DefaultAccountState)
-- ✅ **🔥 Batch mint** — mint to multiple recipients
-- ✅ **🔥 Multisig governance** — proposal + approval + execute flow
+- Token-2022 native support
+- 6 RBAC roles (Master, Minter, Burner, Pauser, Blacklister, Seizer)
+- Role-based mint/burn operations
+- Account freeze/thaw
+- Emergency pause/unpause
+- Minter quotas with overflow protection
+- **Supply cap enforcement** (0 = unlimited)
+- **Epoch quota with 24h reset**
+- **Token-2022 extensions** (MintCloseAuthority, DefaultAccountState)
+- **Batch mint** - mint to multiple recipients
+- **Multisig governance** - proposal + approval + execute flow
 
 ### SSS-2: Compliance Transfer Hook
-- ✅ Transfer fees (basis points + max cap)
-- ✅ Whitelist (fee bypass)
-- ✅ Blacklist enforcement (block transfers)
-- ✅ Permanent delegate (bypass all restrictions)
-- ✅ Asset seizure from blacklisted accounts
-- ✅ Emergency pause
-- ✅ **🔥 Batch blacklist** — batch compliance operations
-- ✅ 13+ audit event types
+- Transfer fees (basis points + max cap)
+- Whitelist (fee bypass)
+- Blacklist enforcement (block transfers)
+- Permanent delegate (bypass all restrictions)
+- Asset seizure from blacklisted accounts
+- Emergency pause
+- **Batch blacklist** - batch compliance operations
+- 13+ audit event types
 
 ### Backend Services (Advanced Infrastructure)
-- 🔥 **PostgreSQL** — production-grade database
-- 🔥 **Redis caching** — high-performance operations
-- 🔥 **3 microservices**: API, Event Indexer, Compliance
-- 🔥 **Docker Compose** — full stack deployment
-- 🔥 **REST API** — comprehensive endpoints
+- **PostgreSQL** - production-grade database
+- **Redis caching** - high-performance operations
+- **3 microservices**: API, Event Indexer, Compliance
+- **Docker Compose** - full stack deployment
+- **REST API** - comprehensive endpoints
 
 ### SDK & CLI
-- 🔥 **4 SDK modules** — SolanaStablecoin, ComplianceModule, RoleManager, **MultisigModule**
-- 🔥 **Batch operations** — batch_mint, batch_blacklist
-- 🔥 **13 CLI commands** — full operator toolkit
-- 🔥 **8 step-by-step examples** — full feature coverage
-- 🔥 **TypeScript native** — full type safety
+- **4 SDK modules** - SolanaStablecoin, ComplianceModule, RoleManager, MultisigModule
+- **Batch operations** - batch_mint, batch_blacklist
+- **13 CLI commands** - full operator toolkit
+- **8 step-by-step examples** - full feature coverage
+- **TypeScript native** - full type safety
 
-## 📊 Architecture
+## Architecture
 
 ```mermaid
 flowchart TB
@@ -96,7 +96,7 @@ Transfer Hook"]
     Programs -->|CPI| Token2022
 ```
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 solana-stablecoin-bounty/
@@ -140,7 +140,7 @@ solana-stablecoin-bounty/
     └── demo.sh                 # Terminal demo
 ```
 
-## 🎯 Usage Examples
+## Usage Examples
 
 ### SDK Example
 
@@ -197,7 +197,7 @@ sss-token blacklist add BadActor111111... "Reason"
 sss-token pause
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -212,7 +212,7 @@ cd tests/sdk && npx mocha *.test.ts
 cd examples && npx ts-node 01-basic-sss1.ts
 ```
 
-## 📦 Deployment
+## Deployment
 
 ### Backend (Docker)
 
@@ -233,7 +233,7 @@ Services:
 anchor deploy --provider.cluster devnet
 ```
 
-## 📚 Documentation
+## Documentation
 
 - [Architecture Overview](./docs/ARCHITECTURE.md)
 - [SSS-1 Specification](./docs/SSS-1.md)
@@ -243,7 +243,7 @@ anchor deploy --provider.cluster devnet
 - [Compliance Framework](./docs/COMPLIANCE.md)
 - [API Reference](./docs/API.md)
 
-## 🔒 Security
+## Security
 
 - All sensitive operations require role verification
 - Emergency pause capability
@@ -251,19 +251,11 @@ anchor deploy --provider.cluster devnet
 - Asset seizure from blacklisted accounts
 - Comprehensive audit logging
 
-## 🤝 Contributing
+## License
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open Pull Request
+MIT License - see [LICENSE](./LICENSE)
 
-## 📄 License
-
-MIT License — see [LICENSE](./LICENSE)
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Solana Foundation
 - Anchor Framework
