@@ -49,17 +49,17 @@ anchor deploy --provider.cluster devnet
 - ✅ 13+ audit event types
 
 ### Backend Services (Advanced Infrastructure)
-- 🔥 **PostgreSQL** (vs SQLite in competitors) — production-grade database
+- 🔥 **PostgreSQL** — production-grade database
 - 🔥 **Redis caching** — high-performance operations
 - 🔥 **3 microservices**: API, Event Indexer, Compliance
 - 🔥 **Docker Compose** — full stack deployment
 - 🔥 **REST API** — comprehensive endpoints
 
 ### SDK & CLI
-- 🔥 **4 SDK modules** — SolanaStablecoin, ComplianceModule, RoleManager, **MultisigModule** [NEW]
+- 🔥 **4 SDK modules** — SolanaStablecoin, ComplianceModule, RoleManager, **MultisigModule**
 - 🔥 **Batch operations** — batch_mint, batch_blacklist
-- 🔥 **13 CLI commands** — more than competitors (10)
-- 🔥 **8 step-by-step examples** — full feature coverage [NEW: 06, 07, 08]
+- 🔥 **13 CLI commands** — full operator toolkit
+- 🔥 **8 step-by-step examples** — full feature coverage
 - 🔥 **TypeScript native** — full type safety
 
 ## 📊 Architecture
@@ -211,17 +211,6 @@ cd tests/sdk && npx mocha *.test.ts
 # Run examples
 cd examples && npx ts-node 01-basic-sss1.ts
 ```
-
-## 🏆 Competitive Advantages
-
-| Feature | Our Implementation | PR #3 (Reference) |
-|---------|-------------------|-------------------|
-| **Backend Database** | PostgreSQL + Redis | SQLite only |
-| **CLI Commands** | 13 commands | 10 commands |
-| **SDK Examples** | 5 examples | Basic docs |
-| **Backend Services** | API + Indexer + Compliance | Basic API |
-| **Transfer Hook** | Source + Dest checks | Source only |
-| **RBAC Roles** | 6 roles + quotas | 5 roles |
 
 ## 📦 Deployment
 
