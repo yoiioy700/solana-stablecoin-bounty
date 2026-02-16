@@ -59,7 +59,7 @@ anchor deploy --provider.cluster devnet
 - **4 SDK modules** - SolanaStablecoin, ComplianceModule, RoleManager, MultisigModule
 - **Batch operations** - batch_mint, batch_blacklist
 - **13 CLI commands** - full operator toolkit
-- **8 step-by-step examples** - full feature coverage
+- **10 step-by-step examples** - full feature coverage
 - **TypeScript native** - full type safety
 
 ## Architecture
