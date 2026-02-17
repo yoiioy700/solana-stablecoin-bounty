@@ -122,12 +122,17 @@ solana-stablecoin-bounty/
 │   ├── sss-1/                  # SSS-1 tests
 │   ├── sss-2/                  # SSS-2 tests
 │   └── sdk/                    # SDK tests
-├── examples/                   # 5 usage examples
+├── examples/                   # 10 usage examples
 │   ├── 01-basic-sss1.ts
 │   ├── 02-minting-with-rbac.ts
 │   ├── 03-sss2-compliance.ts
 │   ├── 04-lifecycle-upgrade.ts
-│   └── 05-emergency-operations.ts
+│   ├── 05-emergency-operations.ts
+│   ├── 06-batch-operations.ts
+│   ├── 07-multisig-governance.ts
+│   ├── 08-batch-compliance.ts
+│   ├── 09-role-delegation.ts
+│   └── 10-advanced-transfer.ts
 ├── docs/                       # 7 documentation files
 │   ├── ARCHITECTURE.md
 │   ├── SSS-1.md
