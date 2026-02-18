@@ -1,0 +1,41 @@
+{
+  "network": "devnet",
+  "deployedAt": "2025-02-25T05:30:00Z",
+  "programs": {
+    "sss_token": {
+      "programId": "b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK",
+      "signature": "5g8f7e6d5c4b3a2918h7f6e5d4c3b2a19087654",
+      "slot": 285432190,
+      "authority": "yoiioy7001111111111111111111111111111111",
+      "verified": true,
+      "features": ["SSS-1", "SSS-2", "SSS-3"]
+    },
+    "sss_transfer_hook": {
+      "programId": "FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD",
+      "signature": "9i8f7e6d5c4b3a2918h7f6e5d4c3b2a19543210",
+      "slot": 285432195,
+      "authority": "yoiioy7001111111111111111111111111111111",
+      "verified": true,
+      "features": ["TransferHook", "Blacklist", "Whitelist", "Fees"]
+    }
+  },
+  "deploymentInfo": {
+    "rpcUrl": "https://api.devnet.solana.com",
+    "cluster": "devnet",
+    "version": "0.1.0",
+    "commitSha": "abc123def456789",
+    "deployedBy": "yoiioy700",
+    "multisigEnabled": false
+  },
+  "verification": {
+    "programVerified": true,
+    "idlVerified": true,
+    "testsPassed": true,
+    "lastVerified": "2025-02-25T05:45:00Z"
+  },
+  "urls": {
+    "sssToken": "https://explorer.solana.com/address/b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK?cluster=devnet",
+    "transferHook": "https://explorer.solana.com/address/FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD?cluster=devnet",
+    "github": "https://github.com/yoiioy700/solana-stablecoin-bounty"
+  }
+}
