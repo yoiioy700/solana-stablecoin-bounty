@@ -219,22 +219,6 @@ export const DEFAULT_RETRIES = 3;
 export const DEFAULT_RETRY_DELAY = 1000;
 
 // ============================================
-// TYPE ALIASES (for convenience)
-// ============================================
-
-/** Alias for RoleAccount */
-export type Role = RoleAccount;
-
-/** Alias for StablecoinState */
-export type Stablecoin = StablecoinState;
-
-/** Alias for SSS2HookConfig */
-export type HookConfig = SSS2HookConfig;
-
-/** Alias for ConfidentialAccount */
-export type PrivateAccount = ConfidentialAccount;
-
-// ============================================
 // PRESETS
 // ============================================
 
@@ -242,14 +226,12 @@ export type PrivateAccount = ConfidentialAccount;
 export const SSS1_PRESET = {
   enableTransferHook: false,
   enablePermanentDelegate: false,
-  decimals: 6,
 };
 
 /** SSS-2 Compliant preset configuration */
 export const SSS2_PRESET = {
   enableTransferHook: true,
   enablePermanentDelegate: true,
-  decimals: 6,
   transferFeeBasisPoints: 100, // 1%
   maxTransferFee: 100000, // 0.1 token
   minTransferAmount: 1000, // 0.001 token
@@ -259,7 +241,6 @@ export const SSS2_PRESET = {
 export const SSS2_HIGH_COMPLIANCE_PRESET = {
   enableTransferHook: true,
   enablePermanentDelegate: true,
-  decimals: 6,
   transferFeeBasisPoints: 200, // 2%
   maxTransferFee: 500000, // 0.5 token
   minTransferAmount: 10000, // 0.01 token

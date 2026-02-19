@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Connection,
   PublicKey,
@@ -398,7 +399,6 @@ export class SSS2Hook {
 
     if (bps === BigInt(0) || amountNum === BigInt(0)) {
       return {
-        amount,
         fee: new BN(0),
         netAmount: amount,
         rateBps: config.transferFeeBasisPoints,

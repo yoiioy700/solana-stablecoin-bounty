@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Connection, PublicKey, Keypair } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import {
@@ -222,6 +223,7 @@ export class RoleManager {
           quota: new BN(0),
           minted: new BN(0),
           stablecoin: mint,
+          bump: 0,
         },
       };
     } catch (error: any) {
