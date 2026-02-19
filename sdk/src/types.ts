@@ -590,3 +590,85 @@ export function parseAmount(amount: string, decimals: number): BN {
   const divisor = new BN(10).pow(new BN(decimals));
   return wholeBN.mul(divisor).add(fractionBN);
 }
+
+// ============================================
+// SSS-3 CONFIDENTIAL TRANSFER TYPES
+// ============================================
+
+/**
+ * Confidential account state
+ * Stores encrypted balances using ElGamal encryption
+ */
+export interface ConfidentialAccount {
+  owner: PublicKey;
+  mint: PublicKey;
+  pendingBalance: Buffer; // Encrypted
+  availableBalance: Buffer; // Encrypted
+  allowTimestamps: BN;
+  bump: number;
+}
+
+/**
+ * Allowlist entry for confidential transfers
+ */
+export interface AllowlistEntry {
+  address: PublicKey;
+  stablecoin: PublicKey;
+  reason: string;
+  isActive: boolean;
+  createdAt: number;
+  expiry?: BN;
+}
+
+/**
+ * Range proof for zero-knowledge verification
+ * Uses Bulletproofs (672 bytes standard)
+ */
+export interface RangeProof {
+  proof: Buffer; // 672 bytes
+  commitment: Buffer; // 32 bytes
+}
+
+/**
+ * ElGamal public key for encryption
+ */
+export interface ElGamalPubkey {
+  publicKey: Buffer; // 32 bytes
+  commitment: Buffer; // 32 bytes
+}
+
+/**
+ * Confidential transfer configuration
+ */
+export interface ConfidentialityConfig {
+  stablecoin: PublicKey;
+  enabled: boolean;
+  requireAllowlist: boolean;
+  maxBalance: BN;
+  auditor: PublicKey | null;
+  verifier: PublicKey;
+}
+
+/**
+ * ElGamal registry entry
+ */
+export interface ElGamalRegistry {
+  owner: PublicKey;
+  mint: PublicKey;
+  publicKey: Buffer;
+  bump: number;
+}
+
+/**
+ * SSS-3 Feature flags
+ */
+export const FEATURE_CONFIDENTIAL_TRANSFERS = 16;
+export const FEATURE_AUDITOR = 32;
+export const FEATURE_ALLOWLIST_REQUIRED = 64;
+
+/**
+ * Check if stablecoin has SSS-3 features
+ */
+export function isSSS3(features: number): boolean {
+  return (features & FEATURE_CONFIDENTIAL_TRANSFERS) !== 0;
+}

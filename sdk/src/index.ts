@@ -62,6 +62,9 @@ export {
   FEATURE_PERMANENT_DELEGATE,
   FEATURE_MINT_CLOSE_AUTHORITY,
   FEATURE_DEFAULT_ACCOUNT_STATE,
+  FEATURE_CONFIDENTIAL_TRANSFERS,
+  FEATURE_AUDITOR,
+  FEATURE_ALLOWLIST_REQUIRED,
   
   // State types
   StablecoinState,
@@ -107,6 +110,8 @@ export {
   AllowlistEntry,
   RangeProof,
   ElGamalPubkey,
+  ConfidentialityConfig,
+  ElGamalRegistry,
   
   // Errors
   StablecoinError,
@@ -119,6 +124,7 @@ export {
   getFeatureString,
   formatAmount,
   parseAmount,
+  isSSS3 as checkSSS3,
 } from './types';
 
 // Utils
@@ -137,12 +143,6 @@ export {
   getBlacklistPDA,
   getWhitelistPDA,
   
-  // SSS-3 PDA helpers
-  getConfidentialityConfigPDA,
-  getConfidentialAccountPDA,
-  getElGamalRegistryPDA,
-  getRangeProofVerifierPDA,
-  
   // Validation
   validateName,
   validateSymbol,
@@ -150,7 +150,7 @@ export {
   validateBatch,
   
   // Role helpers
-  hasRole,
+  hasRole as checkRole,
   decodeRoles,
   encodeRoles,
   
@@ -158,16 +158,15 @@ export {
   hasFeature,
   decodeFeatures,
   isSSS2,
-  isSSS3,
   
   // Calculations
-  calculateFee,
+  calculateFee as computeFee,
   wouldExceedQuota,
   wouldExceedCap,
   
   // Formatting
-  formatAmount,
-  parseAmount,
+  formatAmount as formatTokenAmount,
+  parseAmount as parseTokenAmount,
   formatWithSymbol,
   
   // RPC helpers
@@ -244,7 +243,7 @@ export const SSS1_PRESET = {
   enableTransferHook: false,
   enablePermanentDelegate: false,
   decimals: 6,
-} as const;
+};
 
 /** SSS-2 Compliant preset configuration */
 export const SSS2_PRESET = {
@@ -254,7 +253,7 @@ export const SSS2_PRESET = {
   transferFeeBasisPoints: 100, // 1%
   maxTransferFee: 100000, // 0.1 token
   minTransferAmount: 1000, // 0.001 token
-} as const;
+};
 
 /** SSS-2 High Compliance preset (stricter settings) */
 export const SSS2_HIGH_COMPLIANCE_PRESET = {
@@ -264,7 +263,7 @@ export const SSS2_HIGH_COMPLIANCE_PRESET = {
   transferFeeBasisPoints: 200, // 2%
   maxTransferFee: 500000, // 0.5 token
   minTransferAmount: 10000, // 0.01 token
-} as const;
+};
 
 /** SSS-3 Private preset (confidential transfers) */
 export const SSS3_PRIVATE_PRESET = {
@@ -272,7 +271,7 @@ export const SSS3_PRIVATE_PRESET = {
   enableConfidentialTransfers: true,
   requireAllowlist: false,
   maxConfidentialBalance: 0, // Unlimited
-} as const;
+};
 
 // ============================================
 // QUICK START
@@ -292,20 +291,20 @@ export const SSS3_PRIVATE_PRESET = {
  * ```
  */
 export function quickStart(connection: any, wallet: any) {
-  const { SolanaStablecoin } = require('./SolanaStablecoin');
-  const { PrivacyModule } = require('./PrivacyModule');
-  const { SSS3_PRESET } = require('./sss3');
+  const sdk = require('./SolanaStablecoin');
+  const privacyMod = require('./PrivacyModule');
+  const sss3 = require('./sss3');
   
-  const sdk = new SolanaStablecoin(connection, wallet);
-  const privacy = new PrivacyModule(connection, wallet);
+  const sdkInstance = new sdk.SolanaStablecoin(connection, wallet);
+  const privacyInstance = new privacyMod.PrivacyModule(connection, wallet);
   
   return {
-    sdk,
-    privacy,
+    sdk: sdkInstance,
+    privacy: privacyInstance,
     
     /** Initialize SSS-1 stablecoin */
     initSSS1: async (name: string, symbol: string, decimals: number = 6) => {
-      return await sdk.initialize({
+      return await sdkInstance.initialize({
         name,
         symbol,
         decimals,
@@ -316,7 +315,7 @@ export function quickStart(connection: any, wallet: any) {
     
     /** Initialize SSS-2 stablecoin */
     initSSS2: async (name: string, symbol: string, decimals: number = 6) => {
-      return await sdk.initialize({
+      return await sdkInstance.initialize({
         name,
         symbol,
         decimals,
@@ -327,50 +326,50 @@ export function quickStart(connection: any, wallet: any) {
     
     /** Initialize SSS-3 private stablecoin */
     initSSS3: async (name: string, symbol: string, decimals: number = 6) => {
-      return await sdk.initialize({
+      return await sdkInstance.initialize({
         name,
         symbol,
         decimals,
         authority: (wallet as any).payer,
-        ...SSS3_PRESET,
+        ...sss3.SSS3_PRESET,
       });
     },
     
     /** Mint tokens */
-    mint: sdk.mint.bind(sdk),
+    mint: sdkInstance.mint.bind(sdkInstance),
     
     /** Burn tokens */
-    burn: sdk.burn.bind(sdk),
+    burn: sdkInstance.burn.bind(sdkInstance),
     
     /** Freeze account */
-    freeze: sdk.freeze.bind(sdk),
+    freeze: sdkInstance.freeze.bind(sdkInstance),
     
     /** Thaw account */
-    thaw: sdk.thaw.bind(sdk),
+    thaw: sdkInstance.thaw.bind(sdkInstance),
     
     /** Pause contract */
-    pause: sdk.pause.bind(sdk),
+    pause: sdkInstance.pause.bind(sdkInstance),
     
     /** Unpause contract */
-    unpause: sdk.unpause.bind(sdk),
+    unpause: sdkInstance.unpause.bind(sdkInstance),
     
     /** Get state */
-    getState: sdk.getState.bind(sdk),
+    getState: sdkInstance.getState.bind(sdkInstance),
     
     /** Get role */
-    getRole: sdk.getRole.bind(sdk),
+    getRole: sdkInstance.getRole.bind(sdkInstance),
     
     /** Create confidential account */
-    createConfidentialAccount: privacy.createConfidentialAccount.bind(privacy),
+    createConfidentialAccount: privacyInstance.createConfidentialAccount.bind(privacyInstance),
     
     /** Confidential transfer */
-    confidentialTransfer: privacy.confidentialTransfer.bind(privacy),
+    confidentialTransfer: privacyInstance.confidentialTransfer.bind(privacyInstance),
     
     /** Deposit to confidential */
-    depositToConfidential: privacy.depositToConfidential.bind(privacy),
+    depositToConfidential: privacyInstance.depositToConfidential.bind(privacyInstance),
     
     /** Withdraw from confidential */
-    withdrawFromConfidential: privacy.withdrawFromConfidential.bind(privacy),
+    withdrawFromConfidential: privacyInstance.withdrawFromConfidential.bind(privacyInstance),
   };
 }
 
@@ -396,7 +395,7 @@ export const NETWORKS = {
   
   /** Helius Mainnet */
   HELIUS_MAINNET: 'https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY',
-} as const;
+};
 
 // ============================================
 // EXPLORER URLS
