@@ -2,30 +2,45 @@
  * Solana Stablecoin Standard (SSS) SDK
  * 
  * @module @ssb/sss-sdk
- * @description TypeScript SDK for managing SSS-1 (minimal) and SSS-2 (compliant) stablecoins on Solana
+ * @description TypeScript SDK for managing SSS-1 (minimal), SSS-2 (compliant), and SSS-3 (private) stablecoins on Solana
  * 
  * @example
  * ```typescript
- * import { SolanaStablecoin, getStablecoinPDA, ROLE_MASTER } from '@ssb/sss-sdk';
+ * import { SolanaStablecoin, PrivacyModule, SSS3_PRESET } from '@ssb/sss-sdk';
  * 
  * const sdk = new SolanaStablecoin(connection, wallet);
+ * const privacy = new PrivacyModule(connection);
  * 
- * // Initialize SSS-1 stablecoin
+ * // Initialize SSS-3 private stablecoin
  * const result = await sdk.initialize({
- *   name: 'Test USD',
- *   symbol: 'TUSD',
+ *   name: 'Private USD',
+ *   symbol: 'PUSD',
  *   decimals: 6,
  *   authority: keypair,
+ *   ...SSS3_PRESET,
  * });
- * 
- * if (result.success) {
- *   console.log(`Mint created: ${result.data?.mint}`);
- * }
  * ```
  */
 
 // Core SDK
 export { SolanaStablecoin } from './SolanaStablecoin';
+
+// SSS-3 Privacy Module
+export { PrivacyModule, generateElGamalKeypair } from './PrivacyModule';
+
+// SSS-3 Presets
+export {
+  SSS3_PRESET,
+  SSS3_HIGH_PRIVACY_PRESET,
+  SSS3_COMPLIANT_PRESET,
+  createSSS3Params,
+  isSSS3,
+  encodeSSS3Features,
+  decodeSSS3Features,
+  SSS3_FEATURE_DESCRIPTIONS,
+  validateSSS3Params,
+  SSS3_INIT_STEPS,
+} from './sss3';
 
 // Types
 export {
@@ -87,6 +102,12 @@ export {
   ConfigUpdated,
   BatchBlacklistAdded,
   
+  // SSS-3 Types
+  ConfidentialAccount,
+  AllowlistEntry,
+  RangeProof,
+  ElGamalPubkey,
+  
   // Errors
   StablecoinError,
   TransferHookError,
@@ -116,6 +137,12 @@ export {
   getBlacklistPDA,
   getWhitelistPDA,
   
+  // SSS-3 PDA helpers
+  getConfidentialityConfigPDA,
+  getConfidentialAccountPDA,
+  getElGamalRegistryPDA,
+  getRangeProofVerifierPDA,
+  
   // Validation
   validateName,
   validateSymbol,
@@ -131,6 +158,7 @@ export {
   hasFeature,
   decodeFeatures,
   isSSS2,
+  isSSS3,
   
   // Calculations
   calculateFee,
@@ -168,10 +196,10 @@ export {
 // ============================================
 
 /** SDK Version */
-export const VERSION = '0.1.0';
+export const VERSION = '0.2.0';
 
 /** SDK Build Date */
-export const BUILD_DATE = new Date('2025-02-24');
+export const BUILD_DATE = new Date('2025-02-25');
 
 /** Default RPC Endpoint */
 export const DEFAULT_RPC_ENDPOINT = 'https://api.devnet.solana.com';
@@ -204,6 +232,9 @@ export type Stablecoin = StablecoinState;
 /** Alias for SSS2HookConfig */
 export type HookConfig = SSS2HookConfig;
 
+/** Alias for ConfidentialAccount */
+export type PrivateAccount = ConfidentialAccount;
+
 // ============================================
 // PRESETS
 // ============================================
@@ -235,6 +266,14 @@ export const SSS2_HIGH_COMPLIANCE_PRESET = {
   minTransferAmount: 10000, // 0.01 token
 } as const;
 
+/** SSS-3 Private preset (confidential transfers) */
+export const SSS3_PRIVATE_PRESET = {
+  ...SSS2_PRESET,
+  enableConfidentialTransfers: true,
+  requireAllowlist: false,
+  maxConfidentialBalance: 0, // Unlimited
+} as const;
+
 // ============================================
 // QUICK START
 // ============================================
@@ -246,18 +285,23 @@ export const SSS2_HIGH_COMPLIANCE_PRESET = {
  * ```typescript
  * import { quickStart } from '@ssb/sss-sdk';
  * 
- * const { initSSS1, initSSS2 } = quickStart(connection, wallet);
+ * const { initSSS1, initSSS2, initSSS3, privacy } = quickStart(connection, wallet);
  * 
- * // Initialize SSS-1
- * const result = await initSSS1('My Token', 'MYT');
+ * // Initialize SSS-3 private stablecoin
+ * const result = await initSSS3('Private USD', 'PUSD');
  * ```
  */
 export function quickStart(connection: any, wallet: any) {
   const { SolanaStablecoin } = require('./SolanaStablecoin');
+  const { PrivacyModule } = require('./PrivacyModule');
+  const { SSS3_PRESET } = require('./sss3');
+  
   const sdk = new SolanaStablecoin(connection, wallet);
+  const privacy = new PrivacyModule(connection, wallet);
   
   return {
     sdk,
+    privacy,
     
     /** Initialize SSS-1 stablecoin */
     initSSS1: async (name: string, symbol: string, decimals: number = 6) => {
@@ -278,6 +322,17 @@ export function quickStart(connection: any, wallet: any) {
         decimals,
         authority: (wallet as any).payer,
         ...SSS2_PRESET,
+      });
+    },
+    
+    /** Initialize SSS-3 private stablecoin */
+    initSSS3: async (name: string, symbol: string, decimals: number = 6) => {
+      return await sdk.initialize({
+        name,
+        symbol,
+        decimals,
+        authority: (wallet as any).payer,
+        ...SSS3_PRESET,
       });
     },
     
@@ -304,6 +359,18 @@ export function quickStart(connection: any, wallet: any) {
     
     /** Get role */
     getRole: sdk.getRole.bind(sdk),
+    
+    /** Create confidential account */
+    createConfidentialAccount: privacy.createConfidentialAccount.bind(privacy),
+    
+    /** Confidential transfer */
+    confidentialTransfer: privacy.confidentialTransfer.bind(privacy),
+    
+    /** Deposit to confidential */
+    depositToConfidential: privacy.depositToConfidential.bind(privacy),
+    
+    /** Withdraw from confidential */
+    withdrawFromConfidential: privacy.withdrawFromConfidential.bind(privacy),
   };
 }
 
