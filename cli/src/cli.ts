@@ -344,7 +344,7 @@ program
         console.log(`Total Supply:  ${state.totalSupply.toString()}`);
         console.log(`Authority:     ${state.authority.toBase58()}`);
         console.log(`Mint:          ${state.mint.toBase58()}`);
-        console.log(`');
+        console.log('');
         console.log(`Status:        ${state.isPaused ? '🔴 PAUSED' : '🟢 ACTIVE'}`);
         console.log(`Features:      ${sdk.decodeFeatures(state.features).join(', ') || 'None'}`);
         console.log('');

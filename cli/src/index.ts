@@ -462,7 +462,7 @@ program
   .argument('<address>', 'Address to seize from')
   .requiredOption('--to <treasury>', 'Treasury address to send to')
   .action(async (address, options) => {
-    console.log(chalk.blue('🚨 SEIZING TOKENS')));
+    console.log(chalk.blue('🚨 SEIZING TOKENS'));
     console.log(chalk.gray(`From: ${address}`));
     console.log(chalk.gray(`To Treasury: ${options.to}`));
     
