@@ -13,7 +13,7 @@ import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { AnchorProvider } from '@coral-xyz/anchor';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SolanaStablecoin } from '../sdk/src/SolanaStablecoin';
+import { SolanaStablecoin } from '../../sdk/dist/SolanaStablecoin';
 import { BN } from '@coral-xyz/anchor';
 
 const program = new Command();
