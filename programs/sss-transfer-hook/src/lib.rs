@@ -208,10 +208,10 @@ pub mod sss_transfer_hook {
         
         // Check whitelist
         let mut is_whitelisted = false;
-        if let Some(ref whitelist) = ctx.accounts.source_whitelist {
+        if let Some(ref _whitelist) = ctx.accounts.source_whitelist {
             is_whitelisted = true;
         }
-        if let Some(ref whitelist) = ctx.accounts.destination_whitelist {
+        if let Some(ref _whitelist) = ctx.accounts.destination_whitelist {
             is_whitelisted = true;
         }
         

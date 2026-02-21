@@ -2293,12 +2293,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "sss2_hook"
+name = "sss-token"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "blake3",
+ "solana-program",
+ "spl-token",
+]
+
+[[package]]
+name = "sss-transfer-hook"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
 ]
 
 [[package]]
