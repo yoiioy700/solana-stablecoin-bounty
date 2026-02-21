@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_2022::spl_token_2022::extension::transfer_hook::TransferHookAccount;
 use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::{Mint as InterfaceMint, TokenAccount as InterfaceTokenAccount};
 
@@ -266,7 +265,7 @@ pub mod sss_transfer_hook {
         entry.blacklisted_by = ctx.accounts.authority.key();
         entry.created_at = Clock::get()?.unix_timestamp;
         entry.is_active = true;
-        entry.bump = ctx.bumps.blacklist_entry;
+        entry.bump = 0; // bump stored in PDA, not needed in data
         
         emit!(BlacklistAdded {
             address: ctx.accounts.target_address.key(),
@@ -362,7 +361,7 @@ pub mod sss_transfer_hook {
         entry.whitelist_type = whitelist_type;
         entry.added_by = ctx.accounts.authority.key();
         entry.created_at = Clock::get()?.unix_timestamp;
-        entry.bump = ctx.bumps.whitelist_entry;
+        entry.bump = 0; // bump stored in PDA, not needed in data
         
         Ok(())
     }
