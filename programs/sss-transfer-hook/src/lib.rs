@@ -1,10 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_2022::spl_token_2022::extension::transfer_hook::TransferHookAccount;
-use anchor_spl::token_2022::spl_token_2022::instruction::execute_transfer_hook;
 use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::{Mint as InterfaceMint, TokenAccount as InterfaceTokenAccount};
 
-/// ============ PROGRAM ID ============
 declare_id!("FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD");
 
 /// ============ STATE STRUCTURES ============
@@ -526,6 +524,7 @@ pub struct ExecuteTransferHook<'info> {
 
 #[derive(Accounts)]
 pub struct ManageBlacklist<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     
     #[account(mut)]
@@ -548,6 +547,7 @@ pub struct ManageBlacklist<'info> {
 
 #[derive(Accounts)]
 pub struct ManageWhitelist<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     
     #[account(mut)]
