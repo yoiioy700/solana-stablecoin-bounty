@@ -541,6 +541,8 @@ pub struct ManageBlacklist<'info> {
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
     
+    pub bump: u8,
+    
     pub system_program: Program<'info, System>,
 }
 
@@ -563,6 +565,8 @@ pub struct ManageWhitelist<'info> {
         bump
     )]
     pub whitelist_entry: Account<'info, WhitelistEntry>,
+    
+    pub bump: u8,
     
     pub system_program: Program<'info, System>,
 }
