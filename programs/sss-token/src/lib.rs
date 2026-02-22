@@ -302,8 +302,9 @@ pub mod sss_token {
             
             // If epoch passed (24 hours = 86400 seconds), reset
             if epoch_elapsed >= 86400 {
-                ctx.accounts.stablecoin_state.current_epoch_minted = 0;
-                ctx.accounts.stablecoin_state.current_epoch_start = current_time;
+                let stablecoin_mut = &mut ctx.accounts.stablecoin_state;
+                stablecoin_mut.current_epoch_minted = 0;
+                stablecoin_mut.current_epoch_start = current_time;
             }
             
             require!(
@@ -690,8 +691,9 @@ pub mod sss_token {
             let epoch_elapsed = current_time - stablecoin.current_epoch_start;
             
             if epoch_elapsed >= 86400 {
-                ctx.accounts.stablecoin_state.current_epoch_minted = 0;
-                ctx.accounts.stablecoin_state.current_epoch_start = current_time;
+                let stablecoin_mut = &mut ctx.accounts.stablecoin_state;
+                stablecoin_mut.current_epoch_minted = 0;
+                stablecoin_mut.current_epoch_start = current_time;
             }
             
             require!(
@@ -1024,7 +1026,6 @@ pub struct UpdateRoles<'info> {
         payer = authority,
         space = 8 + 100,
         seeds = [b"role", target.key().as_ref(), stablecoin_state.mint.as_ref()],
-        bump
     )]
     pub target_role: Account<'info, RoleAccount>,
     
