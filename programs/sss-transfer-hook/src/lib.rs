@@ -336,7 +336,7 @@ pub mod sss_transfer_hook {
                 &[],
             ),
             seize_amount,
-            ctx.accounts.config.decimals,
+            ctx.accounts.mint.decimals,
         )?;
         
         emit!(TokensSeized {
