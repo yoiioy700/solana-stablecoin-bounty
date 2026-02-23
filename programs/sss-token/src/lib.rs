@@ -59,12 +59,13 @@ pub struct MultisigProposal {
 }
 
 // === ROLE CONSTANTS ===
-pub const ROLE_MASTER: u8 = 1;      // Full control
-pub const ROLE_MINTER: u8 = 2;      // Can mint
-pub const ROLE_BURNER: u8 = 4;      // Can burn
-pub const ROLE_PAUSER: u8 = 8;     // Can pause/unpause
+pub const ROLE_MASTER: u8 = 1;       // Full control
+pub const ROLE_MINTER: u8 = 2;       // Can mint
+pub const ROLE_BURNER: u8 = 4;       // Can burn
+pub const ROLE_PAUSER: u8 = 8;       // Can pause/unpause
 pub const ROLE_BLACKLISTER: u8 = 16; // Can manage blacklist
-pub const ROLE_SEIZER: u8 = 32;     // Can seize tokens
+pub const ROLE_SEIZER: u8 = 32;      // Can seize tokens
+pub const ROLE_FREEZER: u8 = 64;     // Can freeze/thaw individual accounts (SSS-2)
 
 // === ERROR CODES ===
 #[error_code]
@@ -93,6 +94,12 @@ pub enum StablecoinError {
     SupplyCapExceeded,
     #[msg("Epoch quota exceeded")]
     EpochQuotaExceeded,
+    #[msg("Token name too long (max 32 chars)")]
+    NameTooLong,
+    #[msg("Token symbol too long (max 10 chars)")]
+    SymbolTooLong,
+    #[msg("Invalid role bitmask")]
+    InvalidRole,
 }
 
 // === EVENTS ===

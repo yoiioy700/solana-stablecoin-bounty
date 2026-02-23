@@ -1,6 +1,13 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::{Mint as InterfaceMint, TokenAccount as InterfaceTokenAccount};
+use spl_tlv_account_resolution::{
+    account::ExtraAccountMeta,
+    seeds::Seed,
+    state::ExtraAccountMetaList,
+};
+use spl_transfer_hook_interface::instruction::ExecuteInstruction;
 
 declare_id!("FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD");
 
@@ -162,6 +169,67 @@ pub mod sss_transfer_hook {
                 transfer_fee_basis_points, max_transfer_fee, min_transfer_amount, blacklist_enabled),
             timestamp: Clock::get()?.unix_timestamp,
         });
+
+        Ok(())
+    }
+
+    /// Initialize ExtraAccountMetaList — REQUIRED by Token-2022 before hook can be installed on a mint.
+    /// This stores the PDAs the hook needs as extra accounts for every transfer.
+    pub fn initialize_extra_account_meta_list(
+        ctx: Context<InitExtraAccountMetaList>,
+    ) -> Result<()> {
+        // Define the extra accounts needed for every execute_transfer_hook call:
+        // [0] config PDA  (seeds: ["hook_config", mint])
+        // [1] source owner blacklist PDA  (seeds: ["blacklist", config, source_account.owner])
+        // [2] destination blacklist PDA   (seeds: ["blacklist", config, destination_account.owner])
+        let account_metas = vec![
+            // Config account — deterministic, seeded on mint
+            ExtraAccountMeta::new_with_seeds(
+                &[
+                    Seed::Literal { bytes: b"hook_config".to_vec() },
+                    Seed::AccountKey { index: 2 }, // mint is account index 2 in execute
+                ],
+                false, // is_signer
+                false, // is_writable — we only need to read config in execute
+            )?,
+            // Source blacklist PDA — seeded on config + source_account.owner
+            // source_account is index 0, config (extra acct 0) is index 4
+            ExtraAccountMeta::new_with_seeds(
+                &[
+                    Seed::Literal { bytes: b"blacklist".to_vec() },
+                    Seed::AccountKey { index: 4 }, // config extra account index 0 = overall index 4
+                    Seed::AccountKey { index: 3 }, // source_account.owner — wallet, passed as remaining
+                ],
+                false,
+                false,
+            )?,
+            // Destination blacklist PDA — seeded on config + destination_account.owner
+            ExtraAccountMeta::new_with_seeds(
+                &[
+                    Seed::Literal { bytes: b"blacklist".to_vec() },
+                    Seed::AccountKey { index: 4 }, // config
+                    Seed::AccountKey { index: 3 }, // destination owner
+                ],
+                false,
+                false,
+            )?,
+        ];
+
+        // Calculate required space
+        let account_size = ExtraAccountMetaList::size_of(account_metas.len())?;
+
+        // Initialize the ExtraAccountMetaList account
+        ExtraAccountMetaList::init::<ExecuteInstruction>(
+            &mut ctx.accounts.extra_account_meta_list.try_borrow_mut_data()?,
+            &account_metas,
+        )?;
+
+        msg!(
+            "ExtraAccountMetaList initialized for mint {} with {} extra accounts (size: {} bytes)",
+            ctx.accounts.mint.key(),
+            account_metas.len(),
+            account_size,
+        );
 
         Ok(())
     }
@@ -469,6 +537,41 @@ pub struct InitializeHook<'info> {
     pub config: Account<'info, TransferHookConfig>,
     
     pub system_program: Program<'info, System>,
+}
+
+/// Accounts for initialize_extra_account_meta_list.
+/// Token-2022 requires this account to be created with the extra PDAs
+/// the hook will need during execute_transfer_hook invocations.
+#[derive(Accounts)]
+pub struct InitExtraAccountMetaList<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    /// CHECK: Transfer hook config (already initialized)
+    #[account(
+        seeds = [b"hook_config", mint.key().as_ref()],
+        bump,
+    )]
+    pub config: Account<'info, TransferHookConfig>,
+
+    /// The Token-2022 mint this hook is registered on
+    /// CHECK: validated by seeds constraint
+    pub mint: InterfaceAccount<'info, InterfaceMint>,
+
+    /// The ExtraAccountMetaList account — seeded on "extra-account-metas" + mint
+    /// This is the canonical seed required by the spl-transfer-hook-interface.
+    /// CHECK: initialized inside the instruction via ExtraAccountMetaList::init
+    #[account(
+        init,
+        payer = payer,
+        space = ExtraAccountMetaList::size_of(3).unwrap_or(256),
+        seeds = [b"extra-account-metas", mint.key().as_ref()],
+        bump,
+    )]
+    pub extra_account_meta_list: AccountInfo<'info>,
+
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token2022>,
 }
 
 #[derive(Accounts)]

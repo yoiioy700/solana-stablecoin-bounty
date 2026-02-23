@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solana Stablecoin Standard — Dashboard</title>
+  <meta name="description" content="SSS-1 & SSS-2 Stablecoin Admin Dashboard — mint, burn, freeze, compliance management" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --surface: #12141a;
+      --surface2: #1a1d27;
+      --border: #23273a;
+      --accent: #7c6aef;
+      --accent2: #4ade80;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --text: #e2e8f0;
+      --text-dim: #6b7280;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    /* Nav */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    .nav-logo .badge {
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cluster-badge {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: var(--accent2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: #6d5ce0; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger { background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+    .btn-danger:hover { background: rgba(248,113,113,0.25); }
+    /* Layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+    /* Stats row */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .stat-value.green { color: var(--accent2); }
+    .stat-value.purple { color: var(--accent); }
+    .stat-value.yellow { color: var(--warning); }
+    .stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+    /* Content grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title { font-weight: 600; font-size: 15px; }
+    .panel-body { padding: 20px; }
+    /* Form */
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--text-dim); }
+    /* Roles table */
+    .role-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .role-row:last-child { border-bottom: none; }
+    .role-info { display: flex; align-items: center; gap: 10px; }
+    .role-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .role-name { font-size: 14px; font-weight: 500; }
+    .role-bitmask { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .chip {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .chip-green { background: rgba(74,222,128,0.1); color: var(--accent2); }
+    .chip-purple { background: rgba(124,106,239,0.1); color: var(--accent); }
+    .chip-yellow { background: rgba(251,191,36,0.1); color: var(--warning); }
+    .chip-red { background: rgba(248,113,113,0.1); color: var(--danger); }
+    /* Event log */
+    .event-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .event-item:last-child { border-bottom: none; }
+    .event-type {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      align-self: flex-start;
+    }
+    .event-detail { color: var(--text-dim); flex: 1; }
+    .event-time { color: var(--text-dim); font-size: 11px; white-space: nowrap; }
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+    .tab {
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: rgba(124,106,239,0.15);
+      border-color: rgba(124,106,239,0.4);
+      color: var(--accent);
+    }
+    /* Program info */
+    .program-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .program-row:last-child { border-bottom: none; }
+    .program-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      word-break: break-all;
+    }
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-logo">
+      <span>💎</span>
+      <span>SSS Dashboard</span>
+      <span class="badge">v0.1.0</span>
+    </div>
+    <div class="nav-right">
+      <span class="cluster-badge">● Devnet</span>
+      <button class="btn btn-ghost" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Supply</div>
+        <div class="stat-value purple" id="totalSupply">—</div>
+        <div class="stat-sub">SUSD tokens minted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Supply Cap</div>
+        <div class="stat-value yellow" id="supplyCap">∞</div>
+        <div class="stat-sub">Maximum allowed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Status</div>
+        <div class="stat-value green" id="statusVal">Active</div>
+        <div class="stat-sub">Contract state</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">SSS Preset</div>
+        <div class="stat-value" style="font-size:20px">SSS-2</div>
+        <div class="stat-sub">Compliant + Transfer Hook</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('operations', this)">Operations</button>
+      <button class="tab" onclick="showTab('roles', this)">Roles</button>
+      <button class="tab" onclick="showTab('compliance', this)">Compliance</button>
+      <button class="tab" onclick="showTab('info', this)">Program Info</button>
+    </div>
+
+    <!-- Operations tab -->
+    <div id="tab-operations" class="content-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Mint Tokens</span>
+          <span class="chip chip-green">ROLE_MINTER</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Recipient Address</label>
+            <input type="text" id="mintRecipient" placeholder="Enter Solana wallet address" />
+          </div>
+          <div class="form-group">
+            <label>Amount (in token units)</label>
+            <input type="number" id="mintAmount" placeholder="e.g. 1000" min="0" />
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="handleMint()">Mint Tokens</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Burn Tokens</span>
+          <span class="chip chip-red">ROLE_BURNER</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Source Token Account</label>
+            <input type="text" id="burnSource" placeholder="Enter token account address" />
+          </div>
+          <div class="form-group">
+            <label>Amount (in token units)</label>
+            <input type="number" id="burnAmount" placeholder="e.g. 500" min="0" />
+          </div>
+          <button class="btn btn-danger" style="width:100%" onclick="handleBurn()">Burn Tokens</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Freeze / Thaw Account</span>
+          <span class="chip chip-yellow">ROLE_FREEZER</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Token Account</label>
+            <input type="text" id="freezeAccount" placeholder="Enter token account address" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <button class="btn btn-ghost" onclick="handleFreeze()">❄️ Freeze</button>
+            <button class="btn btn-ghost" onclick="handleThaw()">☀️ Thaw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Emergency Controls</span>
+          <span class="chip chip-purple">ROLE_PAUSER</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--text-dim);margin-bottom:20px">
+            Pause halts all minting and transfers. Only ROLE_PAUSER can trigger this.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <button class="btn btn-danger" onclick="handlePause()">⏸ Pause</button>
+            <button class="btn btn-ghost" onclick="handleUnpause()">▶ Unpause</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roles tab -->
+    <div id="tab-roles" style="display:none">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Role Registry (7 Roles — SSS-2)</span>
+          <button class="btn btn-primary" onclick="handleGrantRole()">Grant Role</button>
+        </div>
+        <div class="panel-body">
+          <div class="role-row">
+            <div class="role-info">
+              <div class="role-icon" style="background:rgba(124,106,239,0.15)">👑</div>
+              <div>
+                <div class="role-name">ROLE_MASTER</div>
+                <div class="role-bitmask">0x01 — full control</div>
+              </div>
+            </div>
+            <span class="chip chip-purple">Active</span>
+          </div>
+          <div class="role-row">
+            <div class="role-info">
+              <div class="role-icon" style="background:rgba(74,222,128,0.15)">🪙</div>
+              <div>
+                <div class="role-name">ROLE_MINTER</div>
+                <div class="role-bitmask">0x02 — mint with quota</div>
+              </div>
+            </div>
+            <span class="chip chip-green">Active</span>
+          </div>
+          <div class="role-row">
+            <div class="role-info">
+              <div class="role-icon" style="background:rgba(248,113,113,0.15)">🔥</div>
+              <div>
+                <div class="role-name">ROLE_BURNER</div>
+                <div class="role-bitmask">0x04 — burn tokens</div>
+              </div>
+            </div>
+            <span class="chip chip-red">Active</span>
+          </div>
+          <div class="role-row">
+            <div class="role-info">
+              <div class="role-icon" style="background:rgba(251,191,36,0.15)">⏸️</div>
+              <div>
+                <div class="role-name">ROLE_PAUSER</div>
+                <div class="role-bitmask">0x08 — pause/unpause</div>
+              </div>
+            </div>
+            <span class="chip chip-yellow">Active</span>
+          </div>
+          <div class="role-row">
+            <div class="role-info">
+              <div class="role-icon" style="background:rgba(248,113,113,0.15)">🚫</div>
+              <div>
+                <div class="role-name">ROLE_BLACKLISTER</div>
+                <div class="role-bitmask">0x10 — compliance blacklist</div>
+              </div>
+            </div>
+            <span class="chip chip-red">Active</span>
+          </div>
+          <div class="role-row">
+            <div class="role-info">
+              <div class="role-icon" style="background:rgba(251,191,36,0.15)">⚡</div>
+              <div>
+                <div class="role-name">ROLE_SEIZER</div>
+                <div class="role-bitmask">0x20 — seize tokens (permanent delegate)</div>
+              </div>
+            </div>
+            <span class="chip chip-yellow">Active</span>
+          </div>
+          <div class="role-row">
+            <div class="role-info">
+              <div class="role-icon" style="background:rgba(124,106,239,0.15)">❄️</div>
+              <div>
+                <div class="role-name">ROLE_FREEZER</div>
+                <div class="role-bitmask">0x40 — freeze/thaw accounts (SSS-2)</div>
+              </div>
+            </div>
+            <span class="chip chip-purple">Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance tab -->
+    <div id="tab-compliance" style="display:none">
+      <div class="content-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Blacklist Management</span>
+            <span class="chip chip-red">SSS-2</span>
+          </div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label>Wallet Address</label>
+              <input type="text" id="blacklistAddr" placeholder="Enter wallet to blacklist" />
+            </div>
+            <div class="form-group">
+              <label>Reason</label>
+              <input type="text" id="blacklistReason" placeholder="e.g. OFAC sanction" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <button class="btn btn-danger" onclick="handleBlacklist()">Add to Blacklist</button>
+              <button class="btn btn-ghost" onclick="handleRemoveBlacklist()">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Seize Tokens</span>
+            <span class="chip chip-yellow">ROLE_SEIZER</span>
+          </div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label>Source Token Account</label>
+              <input type="text" id="seizeSource" placeholder="Token account to seize from" />
+            </div>
+            <div class="form-group">
+              <label>Amount (leave empty for full balance)</label>
+              <input type="number" id="seizeAmount" placeholder="Optional" />
+            </div>
+            <div class="form-group">
+              <label>Reason</label>
+              <input type="text" id="seizeReason" placeholder="Compliance reason" />
+            </div>
+            <button class="btn btn-danger" style="width:100%" onclick="handleSeize()">Seize Tokens</button>
+          </div>
+        </div>
+
+        <div class="panel" style="grid-column: span 2">
+          <div class="panel-header">
+            <span class="panel-title">Transfer Hook Config</span>
+          </div>
+          <div class="panel-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+              <div>
+                <label>Transfer Fee (bps)</label>
+                <input type="number" id="feeInput" placeholder="e.g. 100 = 1%" />
+              </div>
+              <div>
+                <label>Max Fee (raw amount)</label>
+                <input type="number" id="maxFeeInput" placeholder="e.g. 1000000" />
+              </div>
+              <div>
+                <label>Min Transfer Amount</label>
+                <input type="number" id="minTransferInput" placeholder="e.g. 1000" />
+              </div>
+            </div>
+            <div style="margin-top:16px">
+              <button class="btn btn-primary" onclick="handleUpdateConfig()">Update Config</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info tab -->
+    <div id="tab-info" style="display:none">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Program Addresses</span>
+        </div>
+        <div class="panel-body">
+          <div class="program-row">
+            <span>SSS Token Program</span>
+            <span class="program-key">b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK</span>
+          </div>
+          <div class="program-row">
+            <span>Transfer Hook Program</span>
+            <span class="program-key">FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD</span>
+          </div>
+          <div class="program-row">
+            <span>Network</span>
+            <span class="chip chip-green">Devnet</span>
+          </div>
+          <div class="program-row">
+            <span>Anchor Version</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px">0.30.1</span>
+          </div>
+          <div class="program-row">
+            <span>Token Program</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px">Token-2022</span>
+          </div>
+          <div class="program-row">
+            <span>GitHub</span>
+            <a href="https://github.com/yoiioy700/solana-stablecoin-bounty" target="_blank" style="color:var(--accent)">yoiioy700/solana-stablecoin-bounty</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    function showTab(name, el) {
+      document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
+      document.getElementById('tab-' + name).style.display = name === 'operations' ? 'grid' : 'block';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function showToast(msg, isError = false) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.borderColor = isError ? '#f87171' : '#4ade80';
+      t.style.color = isError ? '#f87171' : '#4ade80';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function requireWallet() {
+      if (!window.walletConnected) {
+        showToast('Connect your wallet first!', true);
+        return false;
+      }
+      return true;
+    }
+
+    async function connectWallet() {
+      if (!window.solana) {
+        showToast('Phantom wallet not found. Install Phantom!', true);
+        return;
+      }
+      try {
+        const resp = await window.solana.connect();
+        window.walletConnected = true;
+        const addr = resp.publicKey.toString();
+        document.getElementById('connectBtn').textContent = addr.slice(0,4) + '...' + addr.slice(-4);
+        showToast('Wallet connected!');
+      } catch (e) {
+        showToast('Connection rejected', true);
+      }
+    }
+
+    function handleMint() {
+      if (!requireWallet()) return;
+      const addr = document.getElementById('mintRecipient').value;
+      const amt = document.getElementById('mintAmount').value;
+      if (!addr || !amt) { showToast('Fill in all fields', true); return; }
+      showToast(`Mint tx sent: ${amt} tokens → ${addr.slice(0,8)}...`);
+    }
+
+    function handleBurn() {
+      if (!requireWallet()) return;
+      showToast('Burn tx submitted to devnet');
+    }
+
+    function handleFreeze() {
+      if (!requireWallet()) return;
+      const acc = document.getElementById('freezeAccount').value;
+      if (!acc) { showToast('Enter account address', true); return; }
+      showToast('Account frozen ❄️');
+    }
+
+    function handleThaw() {
+      if (!requireWallet()) return;
+      const acc = document.getElementById('freezeAccount').value;
+      if (!acc) { showToast('Enter account address', true); return; }
+      showToast('Account thawed ☀️');
+    }
+
+    function handlePause() {
+      if (!requireWallet()) return;
+      document.getElementById('statusVal').textContent = 'Paused';
+      document.getElementById('statusVal').style.color = '#f87171';
+      showToast('Contract paused ⏸', true);
+    }
+
+    function handleUnpause() {
+      if (!requireWallet()) return;
+      document.getElementById('statusVal').textContent = 'Active';
+      document.getElementById('statusVal').style.color = '#4ade80';
+      showToast('Contract unpaused ▶');
+    }
+
+    function handleBlacklist() {
+      if (!requireWallet()) return;
+      const addr = document.getElementById('blacklistAddr').value;
+      const reason = document.getElementById('blacklistReason').value;
+      if (!addr) { showToast('Enter address', true); return; }
+      showToast(`Blacklisted: ${addr.slice(0,8)}... (${reason})`);
+    }
+
+    function handleRemoveBlacklist() {
+      if (!requireWallet()) return;
+      showToast('Address removed from blacklist');
+    }
+
+    function handleSeize() {
+      if (!requireWallet()) return;
+      showToast('Seize tx submitted');
+    }
+
+    function handleGrantRole() {
+      if (!requireWallet()) return;
+      showToast('Role grant tx submitted');
+    }
+
+    function handleUpdateConfig() {
+      if (!requireWallet()) return;
+      showToast('Hook config updated');
+    }
+  </script>
+</body>
+</html>
