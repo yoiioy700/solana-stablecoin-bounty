@@ -1,8 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_2022::{self, Token2022};
 use anchor_spl::token_interface::{Mint as InterfaceMint, TokenAccount as InterfaceTokenAccount};
-use spl_token_2022::state::Mint as Token2022Mint;
-use spl_token_2022::extension::{ExtensionType, StateWithExtensions};
 
 // === ACCOUNT STRUCTURES ===
 
@@ -645,19 +643,14 @@ pub mod sss_token {
     }
     
     // === BATCH MINT ===
+    // Recipients' token accounts are passed as remaining_accounts (in order matching amounts)
     pub fn batch_mint(
         ctx: Context<BatchMint>,
-        recipients: Vec<Pubkey>,
         amounts: Vec<u64>,
     ) -> Result<()> {
-        require!(
-            recipients.len() == amounts.len(),
-            StablecoinError::InvalidAmount
-        );
-        require!(
-            recipients.len() <= 10,
-            StablecoinError::InvalidAmount
-        );
+        let n = amounts.len();
+        require!(n > 0 && n <= 10, StablecoinError::InvalidAmount);
+        require!(ctx.remaining_accounts.len() == n, StablecoinError::InvalidAmount);
         
         let stablecoin = &ctx.accounts.stablecoin_state;
         require!(!stablecoin.is_paused, StablecoinError::ContractPaused);
@@ -671,6 +664,7 @@ pub mod sss_token {
         
         let mut total_amount: u64 = 0;
         for amount in amounts.iter() {
+            require!(*amount > 0, StablecoinError::InvalidAmount);
             total_amount = total_amount.checked_add(*amount)
                 .ok_or(StablecoinError::MathOverflow)?;
         }
@@ -713,6 +707,31 @@ pub mod sss_token {
             );
         }
         
+        let stablecoin_key = ctx.accounts.stablecoin_state.key();
+        let mint_authority_bump = ctx.bumps.mint_authority;
+        let signer_seeds: &[&[&[u8]]] = &[&[
+            b"mint_authority",
+            stablecoin_key.as_ref(),
+            &[mint_authority_bump],
+        ]];
+        
+        // CPI mint_to for each recipient token account (passed as remaining_accounts)
+        for (i, amount) in amounts.iter().enumerate() {
+            let recipient_account = &ctx.remaining_accounts[i];
+            token_2022::mint_to(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    token_2022::MintTo {
+                        mint: ctx.accounts.mint.to_account_info(),
+                        to: recipient_account.to_account_info(),
+                        authority: ctx.accounts.mint_authority.to_account_info(),
+                    },
+                    signer_seeds,
+                ),
+                *amount,
+            )?;
+        }
+        
         // Update state
         let stablecoin_mut = &mut ctx.accounts.stablecoin_state;
         stablecoin_mut.total_supply = stablecoin_mut.total_supply.checked_add(total_amount)
@@ -731,7 +750,7 @@ pub mod sss_token {
         
         emit!(BatchMinted {
             minter: ctx.accounts.minter.key(),
-            recipients: recipients.len() as u16,
+            recipients: n as u16,
             total_amount,
             timestamp: Clock::get()?.unix_timestamp,
         });
@@ -1123,6 +1142,7 @@ pub struct BatchMint<'info> {
     )]
     pub minter_info: Account<'info, MinterInfo>,
     
+    #[account(mut)]
     pub mint: InterfaceAccount<'info, InterfaceMint>,
     
     /// CHECK: PDA used as mint authority
