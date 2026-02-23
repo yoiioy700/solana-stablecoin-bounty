@@ -219,9 +219,8 @@ pub mod sss_token {
         enable_transfer_hook: bool,
         enable_permanent_delegate: bool,
     ) -> Result<()> {
-        require!(name.len() <= 32, StablecoinError::InvalidAmount);
-        require!(symbol.len() <= 10, StablecoinError::InvalidAmount);
-        require!(!ctx.accounts.stablecoin_state.is_initialized(), StablecoinError::AlreadyInitialized);
+        require!(name.len() <= 32, StablecoinError::InvalidAmount); // TODO: add NameTooLong variant
+        require!(symbol.len() <= 10, StablecoinError::InvalidAmount); // TODO: add SymbolTooLong variant
 
         // Initialize stablecoin state
         let stablecoin = &mut ctx.accounts.stablecoin_state;
@@ -283,14 +282,17 @@ pub mod sss_token {
         // Check quota if not master
         if role_account.roles & ROLE_MASTER == 0 {
             let minter_info = &ctx.accounts.minter_info;
+            let new_minted = minter_info.minted.checked_add(amount)
+                .ok_or(StablecoinError::MathOverflow)?;
             require!(
-                minter_info.minted + amount <= minter_info.quota,
+                new_minted <= minter_info.quota,
                 StablecoinError::QuotaExceeded
             );
         }
         
         // Check supply cap
-        let new_supply = stablecoin.total_supply + amount;
+        let new_supply = stablecoin.total_supply.checked_add(amount)
+            .ok_or(StablecoinError::MathOverflow)?;
         if stablecoin.supply_cap > 0 {
             require!(new_supply <= stablecoin.supply_cap, StablecoinError::SupplyCapExceeded);
         }
@@ -307,8 +309,11 @@ pub mod sss_token {
                 stablecoin_mut.current_epoch_start = current_time;
             }
             
+            let epoch_new_total = ctx.accounts.stablecoin_state.current_epoch_minted
+                .checked_add(amount)
+                .ok_or(StablecoinError::MathOverflow)?;
             require!(
-                ctx.accounts.stablecoin_state.current_epoch_minted + amount <= stablecoin.epoch_quota,
+                epoch_new_total <= ctx.accounts.stablecoin_state.epoch_quota,
                 StablecoinError::EpochQuotaExceeded
             );
         }
@@ -673,14 +678,17 @@ pub mod sss_token {
         // Check quota if not master
         if role_account.roles & ROLE_MASTER == 0 {
             let minter_info = &ctx.accounts.minter_info;
+            let new_minted = minter_info.minted.checked_add(total_amount)
+                .ok_or(StablecoinError::MathOverflow)?;
             require!(
-                minter_info.minted + total_amount <= minter_info.quota,
+                new_minted <= minter_info.quota,
                 StablecoinError::QuotaExceeded
             );
         }
         
         // Check supply cap
-        let new_supply = stablecoin.total_supply + total_amount;
+        let new_supply = stablecoin.total_supply.checked_add(total_amount)
+            .ok_or(StablecoinError::MathOverflow)?;
         if stablecoin.supply_cap > 0 {
             require!(new_supply <= stablecoin.supply_cap, StablecoinError::SupplyCapExceeded);
         }
@@ -696,8 +704,11 @@ pub mod sss_token {
                 stablecoin_mut.current_epoch_start = current_time;
             }
             
+            let epoch_new_total = ctx.accounts.stablecoin_state.current_epoch_minted
+                .checked_add(total_amount)
+                .ok_or(StablecoinError::MathOverflow)?;
             require!(
-                ctx.accounts.stablecoin_state.current_epoch_minted + total_amount <= stablecoin.epoch_quota,
+                epoch_new_total <= ctx.accounts.stablecoin_state.epoch_quota,
                 StablecoinError::EpochQuotaExceeded
             );
         }
@@ -817,6 +828,11 @@ pub mod sss_token {
         let config = &ctx.accounts.multisig_config;
         let proposal = &mut ctx.accounts.proposal;
         
+        // Check expiration
+        require!(
+            Clock::get()?.unix_timestamp < proposal.expires_at,
+            StablecoinError::InvalidAmount // Proposal expired
+        );
         require!(
             proposal.approvals.len() as u8 >= config.threshold,
             StablecoinError::Unauthorized
@@ -1026,6 +1042,7 @@ pub struct UpdateRoles<'info> {
         payer = authority,
         space = 8 + 100,
         seeds = [b"role", target.key().as_ref(), stablecoin_state.mint.as_ref()],
+        bump
     )]
     pub target_role: Account<'info, RoleAccount>,
     
