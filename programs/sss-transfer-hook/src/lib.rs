@@ -9,7 +9,7 @@ use spl_tlv_account_resolution::{
 };
 use spl_transfer_hook_interface::instruction::ExecuteInstruction;
 
-declare_id!("FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD");
+declare_id!("97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx");
 
 /// ============ STATE STRUCTURES ============
 

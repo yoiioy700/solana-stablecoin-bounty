@@ -7,7 +7,7 @@ import { BN } from '@coral-xyz/anchor';
 export declare const SSS_TOKEN_PROGRAM_ID: PublicKey;
 /**
  * SSS Transfer Hook program ID
- * @default "FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD"
+ * @default "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
  */
 export declare const SSS_TRANSFER_HOOK_PROGRAM_ID: PublicKey;
 /** Full control - can do everything */

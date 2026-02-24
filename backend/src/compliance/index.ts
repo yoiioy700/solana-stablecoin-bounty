@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 
 const PROGRAM_ID = new PublicKey(
-  process.env.SSS2_PROGRAM_ID || 'FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD'
+  process.env.SSS2_PROGRAM_ID || '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
 );
 
 const connection = new Connection(

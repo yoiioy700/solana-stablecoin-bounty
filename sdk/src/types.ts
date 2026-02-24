@@ -15,10 +15,10 @@ export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
 
 /**
  * SSS Transfer Hook program ID  
- * @default "FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD"
+ * @default "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
  */
 export const SSS_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  'FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD'
+  '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
 );
 
 // ============================================

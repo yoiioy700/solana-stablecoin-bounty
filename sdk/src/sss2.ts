@@ -13,7 +13,7 @@ import type { SSS2HookConfig, SDKResult, FeeCalculation } from './types';
 
 // SSS-2 Program ID (Devnet)
 export const SSS2_PROGRAM_ID = new PublicKey(
-  'FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD'
+  '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
 );
 
 // Instruction discriminators (Anchor: sha256("global:instruction_name")[:8])

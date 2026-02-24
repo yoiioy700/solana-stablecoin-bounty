@@ -14,6 +14,7 @@ import {
 } from './types';
 import { SssToken } from './types/idl/sss_token';
 import { SssTransferHook } from './types/idl/sss_transfer_hook';
+import { ExtensionType, getMintLen, createInitializeMintInstruction, createInitializeConfidentialTransferMintInstruction, createInitializeTransferHookInstruction, createInitializePermanentDelegateInstruction, createInitializeMintCloseAuthorityInstruction, createInitializeDefaultAccountStateInstruction } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
 
 // Token-2022 program ID
@@ -147,24 +148,123 @@ export class SolanaStablecoin {
     authority: Keypair;
     enableTransferHook?: boolean;
     enablePermanentDelegate?: boolean;
+    enableConfidentialTransfers?: boolean;
+    enableMintCloseAuthority?: boolean;
+    enableDefaultAccountState?: boolean;
   }): Promise<SDKResult<{ mint: PublicKey; stablecoin: PublicKey; signature: string }>> {
     try {
-      const { name, symbol, decimals, authority, enableTransferHook = false, enablePermanentDelegate = false } = params;
+      const { 
+        name, symbol, decimals, authority, 
+        enableTransferHook = false, 
+        enablePermanentDelegate = false,
+        enableConfidentialTransfers = false,
+        enableMintCloseAuthority = false,
+        enableDefaultAccountState = false
+      } = params;
 
-      // Validate inputs
       if (name.length > 32) throw new Error('Name must be 32 characters or less');
       if (symbol.length > 10) throw new Error('Symbol must be 10 characters or less');
       if (decimals > 9) throw new Error('Decimals must be 9 or less');
 
-      // Generate mint keypair
       const mintKeypair = Keypair.generate();
-
-      // Derive PDAs
       const stablecoin = this.getStablecoinPDA(mintKeypair.publicKey);
       const masterRole = this.getRolePDA(authority.publicKey, mintKeypair.publicKey);
+      
+      const extensions: ExtensionType[] = [];
+      if (enableConfidentialTransfers) extensions.push(ExtensionType.ConfidentialTransferMint);
+      if (enableTransferHook) extensions.push(ExtensionType.TransferHook);
+      if (enablePermanentDelegate) extensions.push(ExtensionType.PermanentDelegate);
+      if (enableMintCloseAuthority) extensions.push(ExtensionType.MintCloseAuthority);
+      if (enableDefaultAccountState) extensions.push(ExtensionType.DefaultAccountState);
+      
+      const mintLen = getMintLen(extensions);
+      const lamports = await this.connection.getMinimumBalanceForRentExemption(mintLen);
+      
+      // SSS-2 Config PDA is the transfer hook program ID
+      const [configPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from('config'), authority.publicKey.toBuffer()],
+        this.hookProgram.programId
+      );
+      
+      const mintAuthorityPDA = this.getMintAuthorityPDA(stablecoin);
+      
+      const tx = new Transaction();
+      
+      tx.add(
+        web3.SystemProgram.createAccount({
+          fromPubkey: authority.publicKey,
+          newAccountPubkey: mintKeypair.publicKey,
+          space: mintLen,
+          lamports,
+          programId: TOKEN_2022_PROGRAM_ID,
+        })
+      );
+      
+      if (enableConfidentialTransfers) {
+        tx.add(
+          createInitializeConfidentialTransferMintInstruction(
+            mintKeypair.publicKey,
+            authority.publicKey,
+            mintKeypair.publicKey, // Auto-approve new accounts? Usually self
+            TOKEN_2022_PROGRAM_ID
+          )
+        );
+      }
+      
+      if (enableTransferHook) {
+        tx.add(
+          createInitializeTransferHookInstruction(
+            mintKeypair.publicKey,
+            authority.publicKey,
+            this.hookProgram.programId,
+            TOKEN_2022_PROGRAM_ID
+          )
+        );
+      }
+      
+      if (enablePermanentDelegate) {
+        tx.add(
+          createInitializePermanentDelegateInstruction(
+            mintKeypair.publicKey,
+            authority.publicKey,
+            TOKEN_2022_PROGRAM_ID
+          )
+        );
+      }
+      
+      if (enableMintCloseAuthority) {
+        tx.add(
+          createInitializeMintCloseAuthorityInstruction(
+            mintKeypair.publicKey,
+            authority.publicKey,
+            TOKEN_2022_PROGRAM_ID
+          )
+        );
+      }
+      
+      if (enableDefaultAccountState) {
+        // 1 = Frozen, 0 = Initialized. SSS-3 typically requires accounts to be initialized frozen
+        tx.add(
+          createInitializeDefaultAccountStateInstruction(
+            mintKeypair.publicKey,
+            1, // Frozen state requires transfer hook or manual thaw
+            TOKEN_2022_PROGRAM_ID
+          )
+        );
+      }
 
-      // Build transaction
-      const tx = await this.program.methods
+      tx.add(
+        createInitializeMintInstruction(
+          mintKeypair.publicKey,
+          decimals,
+          mintAuthorityPDA,
+          this.getFreezeAuthorityPDA(stablecoin),
+          TOKEN_2022_PROGRAM_ID
+        )
+      );
+
+      // Now call the anchor program to initialize state
+      const initIx = await this.program.methods
         .initialize(name, symbol, decimals, enableTransferHook, enablePermanentDelegate)
         .accounts({
           authority: authority.publicKey,
@@ -175,14 +275,22 @@ export class SolanaStablecoin {
           systemProgram: web3.SystemProgram.programId,
           rent: web3.SYSVAR_RENT_PUBKEY,
         })
-        .signers([authority, mintKeypair])
-        .rpc();
+        .instruction();
+        
+      tx.add(initIx);
+
+      tx.feePayer = authority.publicKey;
+      tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+      tx.sign(authority, mintKeypair);
+
+      const signature = await this.connection.sendRawTransaction(tx.serialize());
+      await this.connection.confirmTransaction(signature, 'confirmed');
 
       return {
         success: true,
-        signature: tx,
+        signature,
         data: {
-          signature: tx,
+          signature,
           mint: mintKeypair.publicKey,
           stablecoin,
         },
@@ -196,9 +304,7 @@ export class SolanaStablecoin {
   }
 
   /**
-   * Mint tokens to recipient
-   */
-  async mint(params: {
+   * async mint(params: {
     stablecoin: PublicKey;
     minter: Keypair;
     recipient: PublicKey;

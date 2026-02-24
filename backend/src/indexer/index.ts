@@ -5,7 +5,7 @@ import { db, initializeDatabase } from './database';
 import cron from 'node-cron';
 
 const PROGRAM_ID = new PublicKey(
-  process.env.SSS2_PROGRAM_ID || 'FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD'
+  process.env.SSS2_PROGRAM_ID || '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
 );
 
 const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || '5000');

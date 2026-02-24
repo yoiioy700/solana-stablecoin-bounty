@@ -209,7 +209,7 @@ pub struct MultisigProposalExecuted {
 }
 
 // === PROGRAM ===
-declare_id!("GGn7LQPiN8VsfYgL7cHPyzbABJsLaaioGBt6m2KwruSq");
+declare_id!("8pgWR8CtoBFQVZt1uufDciegkFSetKr3WmXA2QCyGgx2");
 
 #[program]
 pub mod sss_token {
@@ -915,6 +915,7 @@ pub struct Initialize<'info> {
     )]
     pub master_role: Account<'info, RoleAccount>,
     
+    // Accept pre-initialized mint (initialized by SDK with any desired Token2022 extensions)
     #[account(mut)]
     pub mint: InterfaceAccount<'info, InterfaceMint>,
     

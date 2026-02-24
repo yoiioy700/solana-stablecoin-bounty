@@ -22,7 +22,7 @@ const program = new Command();
 
 // SSS-2 Program ID (Devnet)
 const SSS2_PROGRAM_ID = new PublicKey(
-  'FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD'
+  '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
 );
 
 // CLI Config

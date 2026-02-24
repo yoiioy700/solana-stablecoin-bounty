@@ -53,8 +53,8 @@ solana program show <PROGRAM_ID> --programs
 
 | Program | ID | Deploy Signature |
 |---|---|---|
-| sss_token | `b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK` | See `deployments/devnet.json` |
-| sss_transfer_hook | `FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD` | See `deployments/devnet.json` |
+| sss_token | `8pgWR8CtoBFQVZt1uufDciegkFSetKr3WmXA2QCyGgx2` | See `deployments/devnet.json` |
+| sss_transfer_hook | `97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx` | See `deployments/devnet.json` |
 
 ## Example Operations (Devnet)
 
