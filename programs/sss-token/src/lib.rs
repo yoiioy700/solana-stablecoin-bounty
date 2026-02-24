@@ -272,20 +272,26 @@ pub mod sss_token {
         ctx: Context<MintTokens>,
         amount: u64,
     ) -> Result<()> {
-        let stablecoin = &ctx.accounts.stablecoin_state;
+        // Read values we need before any mutable borrow
+        let is_paused = ctx.accounts.stablecoin_state.is_paused;
+        let supply_cap = ctx.accounts.stablecoin_state.supply_cap;
+        let epoch_quota = ctx.accounts.stablecoin_state.epoch_quota;
+        let epoch_start = ctx.accounts.stablecoin_state.current_epoch_start;
+        let total_supply = ctx.accounts.stablecoin_state.total_supply;
+        let stablecoin_key = ctx.accounts.stablecoin_state.key();
+        let role_bits = ctx.accounts.minter_role.roles;
         
-        require!(!stablecoin.is_paused, StablecoinError::ContractPaused);
+        require!(!is_paused, StablecoinError::ContractPaused);
         require!(amount > 0, StablecoinError::InvalidAmount);
         
         // Check minter role
-        let role_account = &ctx.accounts.minter_role;
         require!(
-            role_account.roles & ROLE_MINTER != 0 || role_account.roles & ROLE_MASTER != 0,
+            role_bits & ROLE_MINTER != 0 || role_bits & ROLE_MASTER != 0,
             StablecoinError::Unauthorized
         );
         
         // Check quota if not master
-        if role_account.roles & ROLE_MASTER == 0 {
+        if role_bits & ROLE_MASTER == 0 {
             let minter_info = &ctx.accounts.minter_info;
             let new_minted = minter_info.minted.checked_add(amount)
                 .ok_or(StablecoinError::MathOverflow)?;
@@ -296,16 +302,16 @@ pub mod sss_token {
         }
         
         // Check supply cap
-        let new_supply = stablecoin.total_supply.checked_add(amount)
+        let new_supply = total_supply.checked_add(amount)
             .ok_or(StablecoinError::MathOverflow)?;
-        if stablecoin.supply_cap > 0 {
-            require!(new_supply <= stablecoin.supply_cap, StablecoinError::SupplyCapExceeded);
+        if supply_cap > 0 {
+            require!(new_supply <= supply_cap, StablecoinError::SupplyCapExceeded);
         }
         
         // Check epoch quota
-        if stablecoin.epoch_quota > 0 {
+        if epoch_quota > 0 {
             let current_time = Clock::get()?.unix_timestamp;
-            let epoch_elapsed = current_time - stablecoin.current_epoch_start;
+            let epoch_elapsed = current_time - epoch_start;
             
             // If epoch passed (24 hours = 86400 seconds), reset
             if epoch_elapsed >= 86400 {
@@ -318,11 +324,12 @@ pub mod sss_token {
                 .checked_add(amount)
                 .ok_or(StablecoinError::MathOverflow)?;
             require!(
-                epoch_new_total <= ctx.accounts.stablecoin_state.epoch_quota,
+                epoch_new_total <= epoch_quota,
                 StablecoinError::EpochQuotaExceeded
             );
         }
 
+        let mint_authority_bump = ctx.bumps.mint_authority;
         // CPI to mint tokens
         token_2022::mint_to(
             CpiContext::new_with_signer(
@@ -332,7 +339,7 @@ pub mod sss_token {
                     to: ctx.accounts.recipient_account.to_account_info(),
                     authority: ctx.accounts.mint_authority.to_account_info(),
                 },
-                &[&[b"mint_authority", stablecoin.key().as_ref(), &[ctx.bumps.mint_authority]]],
+                &[&[b"mint_authority", stablecoin_key.as_ref(), &[mint_authority_bump]]],
             ),
             amount,
         )?;
@@ -343,7 +350,7 @@ pub mod sss_token {
             .ok_or(StablecoinError::MathOverflow)?;
 
         // Update minter quota if applicable
-        if role_account.roles & ROLE_MASTER == 0 {
+        if role_bits & ROLE_MASTER == 0 {
             let minter_info = &mut ctx.accounts.minter_info;
             minter_info.minted = minter_info.minted.checked_add(amount)
                 .ok_or(StablecoinError::MathOverflow)?;
@@ -651,21 +658,28 @@ pub mod sss_token {
     
     // === BATCH MINT ===
     // Recipients' token accounts are passed as remaining_accounts (in order matching amounts)
-    pub fn batch_mint(
-        ctx: Context<BatchMint>,
+    pub fn batch_mint<'a>(
+        ctx: Context<'_, '_, 'a, 'a, BatchMint<'a>>,
         amounts: Vec<u64>,
     ) -> Result<()> {
         let n = amounts.len();
         require!(n > 0 && n <= 10, StablecoinError::InvalidAmount);
         require!(ctx.remaining_accounts.len() == n, StablecoinError::InvalidAmount);
         
-        let stablecoin = &ctx.accounts.stablecoin_state;
-        require!(!stablecoin.is_paused, StablecoinError::ContractPaused);
+        // Read values before any mutable borrow
+        let is_paused = ctx.accounts.stablecoin_state.is_paused;
+        let supply_cap = ctx.accounts.stablecoin_state.supply_cap;
+        let epoch_quota = ctx.accounts.stablecoin_state.epoch_quota;
+        let epoch_start = ctx.accounts.stablecoin_state.current_epoch_start;
+        let total_supply = ctx.accounts.stablecoin_state.total_supply;
+        let stablecoin_key = ctx.accounts.stablecoin_state.key();
+        let role_bits = ctx.accounts.minter_role.roles;
+        
+        require!(!is_paused, StablecoinError::ContractPaused);
         
         // Check minter role
-        let role_account = &ctx.accounts.minter_role;
         require!(
-            role_account.roles & ROLE_MINTER != 0 || role_account.roles & ROLE_MASTER != 0,
+            role_bits & ROLE_MINTER != 0 || role_bits & ROLE_MASTER != 0,
             StablecoinError::Unauthorized
         );
         
@@ -677,7 +691,7 @@ pub mod sss_token {
         }
         
         // Check quota if not master
-        if role_account.roles & ROLE_MASTER == 0 {
+        if role_bits & ROLE_MASTER == 0 {
             let minter_info = &ctx.accounts.minter_info;
             let new_minted = minter_info.minted.checked_add(total_amount)
                 .ok_or(StablecoinError::MathOverflow)?;
@@ -688,16 +702,16 @@ pub mod sss_token {
         }
         
         // Check supply cap
-        let new_supply = stablecoin.total_supply.checked_add(total_amount)
+        let new_supply = total_supply.checked_add(total_amount)
             .ok_or(StablecoinError::MathOverflow)?;
-        if stablecoin.supply_cap > 0 {
-            require!(new_supply <= stablecoin.supply_cap, StablecoinError::SupplyCapExceeded);
+        if supply_cap > 0 {
+            require!(new_supply <= supply_cap, StablecoinError::SupplyCapExceeded);
         }
         
         // Check epoch quota
-        if stablecoin.epoch_quota > 0 {
+        if epoch_quota > 0 {
             let current_time = Clock::get()?.unix_timestamp;
-            let epoch_elapsed = current_time - stablecoin.current_epoch_start;
+            let epoch_elapsed = current_time - epoch_start;
             
             if epoch_elapsed >= 86400 {
                 let stablecoin_mut = &mut ctx.accounts.stablecoin_state;
@@ -709,12 +723,11 @@ pub mod sss_token {
                 .checked_add(total_amount)
                 .ok_or(StablecoinError::MathOverflow)?;
             require!(
-                epoch_new_total <= ctx.accounts.stablecoin_state.epoch_quota,
+                epoch_new_total <= epoch_quota,
                 StablecoinError::EpochQuotaExceeded
             );
         }
         
-        let stablecoin_key = ctx.accounts.stablecoin_state.key();
         let mint_authority_bump = ctx.bumps.mint_authority;
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"mint_authority",
@@ -749,7 +762,7 @@ pub mod sss_token {
             .ok_or(StablecoinError::MathOverflow)?;
         
         // Update minter quota if applicable
-        if role_account.roles & ROLE_MASTER == 0 {
+        if role_bits & ROLE_MASTER == 0 {
             let minter_info = &mut ctx.accounts.minter_info;
             minter_info.minted = minter_info.minted.checked_add(total_amount)
                 .ok_or(StablecoinError::MathOverflow)?;
@@ -1049,6 +1062,7 @@ pub struct SetPaused<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateRoles<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     
     #[account(mut)]
@@ -1077,6 +1091,7 @@ pub struct UpdateRoles<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateMinterQuota<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     
     #[account(mut)]
