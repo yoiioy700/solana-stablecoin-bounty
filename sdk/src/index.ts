@@ -42,12 +42,26 @@ export {
   SSS3_INIT_STEPS,
 } from './sss3';
 
+// Oracle Module (Pyth Integration)
+export {
+  parsePythPrice,
+  fetchPythPrice,
+  usdToTokenAmount,
+  tokenAmountToUsd,
+  buildOracleRemainingAccount,
+  validatePrice,
+  createOracleConfig,
+  PYTH_FEEDS,
+  PriceStatus,
+} from './oracle';
+export type { PythPrice, OracleConfig } from './oracle';
+
 // Types
 export {
   // Program IDs
   SSS_TOKEN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
-  
+
   // Roles
   ROLE_MASTER,
   ROLE_MINTER,
@@ -56,7 +70,7 @@ export {
   ROLE_BLACKLISTER,
   ROLE_SEIZER,
   ROLE_NAMES,
-  
+
   // Features
   FEATURE_TRANSFER_HOOK,
   FEATURE_PERMANENT_DELEGATE,
@@ -65,17 +79,17 @@ export {
   FEATURE_CONFIDENTIAL_TRANSFERS,
   FEATURE_AUDITOR,
   FEATURE_ALLOWLIST_REQUIRED,
-  
+
   // State types
   StablecoinState,
   RoleAccount,
   MinterInfo,
   MultisigConfig,
   MultisigProposal,
-  
+
   // SDK result
   SDKResult,
-  
+
   // Events
   StablecoinInitialized,
   TokensMinted,
@@ -91,7 +105,7 @@ export {
   MultisigProposalCreated,
   MultisigProposalApproved,
   MultisigProposalExecuted,
-  
+
   // SSS-2 Types
   SSS2HookConfig,
   BlacklistEntry,
@@ -104,7 +118,7 @@ export {
   BlacklistRemoved,
   ConfigUpdated,
   BatchBlacklistAdded,
-  
+
   // SSS-3 Types
   ConfidentialAccount,
   AllowlistEntry,
@@ -112,12 +126,12 @@ export {
   ElGamalPubkey,
   ConfidentialityConfig,
   ElGamalRegistry,
-  
+
   // Errors
   StablecoinError,
   TransferHookError,
   decodeError,
-  
+
   // Helpers
   calculateFee,
   hasRole,
@@ -142,48 +156,48 @@ export {
   getHookConfigPDA,
   getBlacklistPDA,
   getWhitelistPDA,
-  
+
   // Validation
   validateName,
   validateSymbol,
   validateDecimals,
   validateBatch,
-  
+
   // Role helpers
   hasRole as checkRole,
   decodeRoles,
   encodeRoles,
-  
+
   // Feature helpers
   hasFeature,
   decodeFeatures,
   isSSS2,
-  
+
   // Calculations
   calculateFee as computeFee,
   wouldExceedQuota,
   wouldExceedCap,
-  
+
   // Formatting
   formatAmount as formatTokenAmount,
   parseAmount as parseTokenAmount,
   formatWithSymbol,
-  
+
   // RPC helpers
   getTokenBalance,
   accountExists,
   getAccountOwner,
-  
+
   // Error handling
   extractError,
   isAnchorError,
   isInsufficientFunds,
   isSlippageError,
-  
+
   // Utils
   sleep,
   withRetry,
-  
+
   // Time
   formatTimestamp,
   now,
@@ -275,14 +289,14 @@ export function quickStart(connection: any, wallet: any) {
   const sdk = require('./SolanaStablecoin');
   const privacyMod = require('./PrivacyModule');
   const sss3 = require('./sss3');
-  
+
   const sdkInstance = new sdk.SolanaStablecoin(connection, wallet);
   const privacyInstance = new privacyMod.PrivacyModule(connection, wallet);
-  
+
   return {
     sdk: sdkInstance,
     privacy: privacyInstance,
-    
+
     /** Initialize SSS-1 stablecoin */
     initSSS1: async (name: string, symbol: string, decimals: number = 6) => {
       return await sdkInstance.initialize({
@@ -293,7 +307,7 @@ export function quickStart(connection: any, wallet: any) {
         ...SSS1_PRESET,
       });
     },
-    
+
     /** Initialize SSS-2 stablecoin */
     initSSS2: async (name: string, symbol: string, decimals: number = 6) => {
       return await sdkInstance.initialize({
@@ -304,7 +318,7 @@ export function quickStart(connection: any, wallet: any) {
         ...SSS2_PRESET,
       });
     },
-    
+
     /** Initialize SSS-3 private stablecoin */
     initSSS3: async (name: string, symbol: string, decimals: number = 6) => {
       return await sdkInstance.initialize({
@@ -315,40 +329,40 @@ export function quickStart(connection: any, wallet: any) {
         ...sss3.SSS3_PRESET,
       });
     },
-    
+
     /** Mint tokens */
     mint: sdkInstance.mint.bind(sdkInstance),
-    
+
     /** Burn tokens */
     burn: sdkInstance.burn.bind(sdkInstance),
-    
+
     /** Freeze account */
     freeze: sdkInstance.freeze.bind(sdkInstance),
-    
+
     /** Thaw account */
     thaw: sdkInstance.thaw.bind(sdkInstance),
-    
+
     /** Pause contract */
     pause: sdkInstance.pause.bind(sdkInstance),
-    
+
     /** Unpause contract */
     unpause: sdkInstance.unpause.bind(sdkInstance),
-    
+
     /** Get state */
     getState: sdkInstance.getState.bind(sdkInstance),
-    
+
     /** Get role */
     getRole: sdkInstance.getRole.bind(sdkInstance),
-    
+
     /** Create confidential account */
     createConfidentialAccount: privacyInstance.createConfidentialAccount.bind(privacyInstance),
-    
+
     /** Confidential transfer */
     confidentialTransfer: privacyInstance.confidentialTransfer.bind(privacyInstance),
-    
+
     /** Deposit to confidential */
     depositToConfidential: privacyInstance.depositToConfidential.bind(privacyInstance),
-    
+
     /** Withdraw from confidential */
     withdrawFromConfidential: privacyInstance.withdrawFromConfidential.bind(privacyInstance),
   };
@@ -361,19 +375,19 @@ export function quickStart(connection: any, wallet: any) {
 export const NETWORKS = {
   /** Local validator */
   LOCALNET: 'http://127.0.0.1:8899',
-  
+
   /** Solana Devnet */
   DEVNET: 'https://api.devnet.solana.com',
-  
+
   /** Solana Mainnet */
   MAINNET: 'https://api.mainnet-beta.solana.com',
-  
+
   /** QuickNode Devnet (example) */
   QUICKNODE_DEVNET: 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY',
-  
+
   /** Helius Devnet */
   HELIUS_DEVNET: 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY',
-  
+
   /** Helius Mainnet */
   HELIUS_MAINNET: 'https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY',
 };
@@ -388,13 +402,13 @@ export const EXPLORERS = {
     devnet: (address: string) => `https://solana.fm/address/${address}?cluster=devnet-solana`,
     mainnet: (address: string) => `https://solana.fm/address/${address}`,
   },
-  
+
   /** Solscan */
   SOLSCAN: {
     devnet: (address: string) => `https://solscan.io/account/${address}?cluster=devnet`,
     mainnet: (address: string) => `https://solscan.io/account/${address}`,
   },
-  
+
   /** Explorer.solana.com */
   EXPLORER: {
     devnet: (address: string) => `https://explorer.solana.com/address/${address}?cluster=devnet`,

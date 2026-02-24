@@ -1,66 +1,48 @@
-# Solana Stablecoin Standards (SSS-1 + SSS-2)
+# Solana Stablecoin Standards (SSS-1 + SSS-2 + SSS-3)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Solana](https://img.shields.io/badge/Solana-Token2022-purple)](https://solana.com)
 [![Anchor](https://img.shields.io/badge/Anchor-0.30.1-blue)](https://www.anchor-lang.com/)
+[![CI](https://github.com/yoiioy700/solana-stablecoin-bounty/actions/workflows/ci.yml/badge.svg)](https://github.com/yoiioy700/solana-stablecoin-bounty/actions)
 
-Production-ready stablecoin implementation with Role-Based Access Control (SSS-1) and advanced compliance features (SSS-2) using Solana Token-2022 transfer hooks.
+Production-ready stablecoin framework with Role-Based Access Control (SSS-1), compliance transfer hooks (SSS-2), and confidential transfers (SSS-3) using Solana Token-2022.
 
 ## Quick Start
 
 ```bash
-# Clone repository
+# Clone
 git clone https://github.com/yoiioy700/solana-stablecoin-bounty.git
 cd solana-stablecoin-bounty
 
-# Install dependencies
+# Install
 npm install
 
-# Run tests
+# Test
 anchor test
 
 # Deploy to devnet
 anchor deploy --provider.cluster devnet
 ```
 
-## Features
+## Preset Comparison
 
-### SSS-1: Basic RBAC Stablecoin
-- Token-2022 native support
-- 6 RBAC roles (Master, Minter, Burner, Pauser, Blacklister, Seizer)
-- Role-based mint/burn operations
-- Account freeze/thaw
-- Emergency pause/unpause
-- Minter quotas with overflow protection
-- **Supply cap enforcement** (0 = unlimited)
-- **Epoch quota with 24h reset**
-- **Token-2022 extensions** (MintCloseAuthority, DefaultAccountState)
-- **Batch mint** - mint to multiple recipients
-- **Multisig governance** - proposal + approval + execute flow
-
-### SSS-2: Compliance Transfer Hook
-- Transfer fees (basis points + max cap)
-- Whitelist (fee bypass)
-- Blacklist enforcement (block transfers)
-- Permanent delegate (bypass all restrictions)
-- Asset seizure from blacklisted accounts
-- Emergency pause
-- **Batch blacklist** - batch compliance operations
-- 13+ audit event types
-
-### Backend Services (Advanced Infrastructure)
-- **PostgreSQL** - production-grade database
-- **Redis caching** - high-performance operations
-- **3 microservices**: API, Event Indexer, Compliance
-- **Docker Compose** - full stack deployment
-- **REST API** - comprehensive endpoints
-
-### SDK & CLI
-- **4 SDK modules** - SolanaStablecoin, ComplianceModule, RoleManager, MultisigModule
-- **Batch operations** - batch_mint, batch_blacklist
-- **13 CLI commands** - full operator toolkit
-- **10 step-by-step examples** - full feature coverage
-- **TypeScript native** - full type safety
+| Feature | SSS-1 (Minimal) | SSS-2 (Compliant) | SSS-3 (Private) |
+|---|:---:|:---:|:---:|
+| Token-2022 Mint | ✅ | ✅ | ✅ |
+| 6 RBAC Roles | ✅ | ✅ | ✅ |
+| Mint/Burn + Quotas | ✅ | ✅ | ✅ |
+| Freeze/Thaw | ✅ | ✅ | ✅ |
+| Pause/Unpause | ✅ | ✅ | ✅ |
+| Batch Mint | ✅ | ✅ | ✅ |
+| Multisig Governance | ✅ | ✅ | ✅ |
+| Transfer Hook | ❌ | ✅ | ✅ |
+| Blacklist | ❌ | ✅ | ✅ |
+| Transfer Fees | ❌ | ✅ | ✅ |
+| Permanent Delegate | ❌ | ✅ | ✅ |
+| Asset Seizure | ❌ | ✅ | ✅ |
+| Confidential Transfers | ❌ | ❌ | ✅ |
+| Allowlist | ❌ | ❌ | ✅ |
+| Default Frozen | ❌ | ❌ | ✅ |
 
 ## Architecture
 
@@ -69,12 +51,15 @@ flowchart TB
     subgraph Client["Client Layer"]
         SDK["TypeScript SDK"]
         CLI["CLI Tool"]
+        TUI["Admin TUI"]
+        FE["Frontend Panel"]
     end
     
     subgraph Services["Backend Services"]
         API["API (Express)"]
         IDX["Event Indexer"]
         CMP["Compliance"]
+        WH["Webhooks"]
         DB[(PostgreSQL)]
         CACHE[(Redis)]
     end
@@ -85,13 +70,21 @@ Token + RBAC"]
         SSS2["SSS-2 Program
 Transfer Hook"]
     end
+
+    subgraph External["External"]
+        PYTH["Pyth Oracle"]
+    end
     
     SDK --> API
     CLI --> API
+    TUI --> SDK
+    FE --> SDK
     API --> IDX
     API --> CMP
+    API --> WH
     IDX --> DB
     CMP --> CACHE
+    SDK --> PYTH
     Services --> Programs
     Programs -->|CPI| Token2022
 ```
@@ -102,151 +95,165 @@ Transfer Hook"]
 solana-stablecoin-bounty/
 ├── programs/
 │   ├── sss-token/              # SSS-1: RBAC stablecoin
-│   │   └── src/lib.rs
 │   └── sss-transfer-hook/      # SSS-2: Transfer hook
-│       └── src/lib.rs
 ├── sdk/
 │   └── src/
-│       ├── SolanaStablecoin.ts # Core SSS-1 class
-│       ├── ComplianceModule.ts # SSS-2 compliance
-│       ├── RoleManager.ts      # RBAC management
+│       ├── SolanaStablecoin.ts  # Core SDK class
+│       ├── ComplianceModule.ts  # SSS-2 compliance
+│       ├── RoleManager.ts       # RBAC management
+│       ├── MultisigModule.ts    # Multisig governance
+│       ├── PrivacyModule.ts     # SSS-3 confidential
+│       ├── oracle.ts            # Pyth price feeds
+│       ├── sss1.ts / sss2.ts / sss3.ts  # Presets
 │       └── index.ts
 ├── cli/
-│   └── src/index.ts            # 13 CLI commands
+│   └── src/index.ts             # 13 CLI commands
+├── tui/
+│   └── src/index.tsx            # Interactive terminal UI (Ink)
+├── app/
+│   └── index.html               # Admin frontend panel
 ├── backend/
-│   ├── src/api/                # REST API
-│   ├── src/indexer/            # Event listener
-│   ├── src/compliance/         # Compliance service
-│   └── docker-compose.yml      # Full stack
+│   ├── src/api/                 # REST API
+│   ├── src/indexer/             # Event listener
+│   ├── src/compliance/          # Compliance service
+│   ├── src/webhook.ts           # Webhook dispatcher
+│   └── docker-compose.yml       # Full stack
 ├── tests/
-│   ├── sss-1/                  # SSS-1 tests
-│   ├── sss-2/                  # SSS-2 tests
-│   └── sdk/                    # SDK tests
-├── examples/                   # 10 usage examples
-│   ├── 01-basic-sss1.ts
-│   ├── 02-minting-with-rbac.ts
-│   ├── 03-sss2-compliance.ts
-│   ├── 04-lifecycle-upgrade.ts
-│   ├── 05-emergency-operations.ts
-│   ├── 06-batch-operations.ts
-│   ├── 07-multisig-governance.ts
-│   ├── 08-batch-compliance.ts
-│   ├── 09-role-delegation.ts
-│   └── 10-advanced-transfer.ts
-├── docs/                       # 7 documentation files
+│   ├── sss-1.test.ts            # SSS-1 tests
+│   ├── sss-2.test.ts            # SSS-2 tests
+│   ├── sss2_hook.ts             # Transfer hook tests
+│   ├── privacy.test.ts          # SSS-3 tests
+│   └── fuzz.test.ts             # Fuzz tests
+├── examples/                    # 10 usage examples
+├── docs/                        # 14 documentation files
 │   ├── ARCHITECTURE.md
-│   ├── SSS-1.md
-│   ├── SSS-2.md
-│   ├── SDK.md
-│   ├── OPERATIONS.md
-│   ├── COMPLIANCE.md
-│   └── API.md
-└── scripts/
-    └── demo.sh                 # Terminal demo
+│   ├── SSS-1.md / SSS-2.md / SSS-3.md
+│   ├── SDK.md / OPERATIONS.md / API.md
+│   ├── COMPLIANCE.md / SECURITY.md / PRIVACY.md
+│   ├── DEPLOYMENT.md / TESTING.md
+│   └── REQUIREMENTS_TRACEABILITY.md
+├── deployments/
+│   └── devnet.json              # Devnet deployment proof
+└── .github/workflows/
+    ├── ci.yml                   # 5-job CI pipeline
+    └── test.yml                 # Test automation
 ```
 
-## Usage Examples
+## Key Features
 
-### SDK Example
+### On-Chain Programs
+- **Token-2022 native** with MintCloseAuthority, DefaultAccountState extensions
+- **6 RBAC roles**: Master, Minter, Burner, Pauser, Blacklister, Seizer
+- **Minter quotas** with overflow protection and 24h epoch reset
+- **Supply cap** enforcement (0 = unlimited)
+- **Batch mint** to multiple recipients
+- **Multisig governance** — proposal → approval → execute flow
+- **Transfer hook** — blacklist/allowlist enforcement on every transfer
+- **Transfer fees** — basis points + max cap
+- **Permanent delegate** — bypass restrictions for crisis recovery
+- **Asset seizure** from blacklisted accounts
+- **Confidential transfers** — Token-2022 ConfidentialTransferMint + auditor key (SSS-3)
+
+### SDK & CLI
+- **5 SDK modules** — SolanaStablecoin, ComplianceModule, RoleManager, MultisigModule, PrivacyModule
+- **Oracle module** — Pyth price feed integration (USD/token conversions)
+- **13 CLI commands** — full operator toolkit with preset selection
+- **10 examples** — step-by-step coverage of all features
+- **TypeScript native** — full type safety
+
+### Backend Services
+- **3 microservices**: API (Express), Event Indexer, Compliance
+- **Webhook dispatcher** — HMAC signed, retry with backoff, 15 event types
+- **PostgreSQL** + **Redis** caching
+- **Docker Compose** — one-command deployment
+
+### Bonus Features
+- **Admin TUI** — Interactive terminal dashboard (Ink/React) with 6 screens
+- **Admin Frontend** — Modern dark-themed web panel with wallet connect
+- **Fuzz tests** — Edge case and boundary testing
+
+## Devnet Deployment
+
+| Program | ID |
+|---|---|
+| sss_token | `b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK` |
+| sss_transfer_hook | `FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD` |
+
+See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for full deployment guide and tx signatures.
+
+## Usage
+
+### SDK
 
 ```typescript
-import { SolanaStablecoin, ComplianceModule, RoleManager } from '@stbr/sss-token';
+import { SolanaStablecoin, ComplianceModule, SSS2_PRESET } from '@stbr/sss-token';
 
-const connection = new Connection('https://api.devnet.solana.com');
-
-// Create SSS-2 stablecoin
-const token = new SolanaStablecoin(connection);
+// Initialize SSS-2 stablecoin
+const token = new SolanaStablecoin(connection, wallet);
 const { data } = await token.initialize({
-  name: 'My USD',
-  symbol: 'MUSD',
+  name: 'Regulated USD',
+  symbol: 'rUSD',
   decimals: 6,
   authority,
-  enableTransferHook: true,
+  ...SSS2_PRESET,
 });
 
-// Setup compliance
+// Compliance
 const compliance = new ComplianceModule(connection);
-await compliance.initialize({
-  stablecoin: data!.mint,
-  authority,
-  transferFeeBasisPoints: 100, // 1%
-  maxTransferFee: new BN(1000000000),
-  blacklistEnabled: true,
-});
-
-// Blacklist bad actor
 await compliance.addToBlacklist({
   config: compliance.getConfigPDA(data!.mint),
   authority,
   target: badActor,
-  reason: 'Suspicious activity',
+  reason: 'Sanctions match',
 });
 ```
 
-### CLI Example
+### CLI
 
 ```bash
-# Initialize stablecoin
-sss-token init --preset sss-2 --name "My USD" --symbol MUSD
+yarn cli init --preset sss-2 -n "Regulated USD" -s rUSD -d 6
+yarn cli mint <recipient> 1000000 -m <mint>
+yarn cli blacklist add <address> -m <mint>
+yarn cli status -m <mint>
+```
 
-# Grant minter role
-sss-token roles grant-minter 7RDzYm... --quota 1000000
+### Admin TUI
 
-# Mint tokens
-sss-token mint 7RDzYm... 100000
-
-# Blacklist address
-sss-token blacklist add BadActor111111... "Reason"
-
-# Emergency pause
-sss-token pause
+```bash
+cd tui && npx ts-node src/index.ts <MINT_ADDRESS> --rpc https://api.devnet.solana.com
 ```
 
 ## Testing
 
 ```bash
-# Run all tests
+# Full suite
 anchor test
 
-# Run specific suite
-cd tests/sss-1 && npx mocha *.test.ts
-cd tests/sss-2 && npx mocha *.test.ts
-cd tests/sdk && npx mocha *.test.ts
-
-# Run examples
-cd examples && npx ts-node 01-basic-sss1.ts
+# Individual suites
+npx ts-mocha -p ./tsconfig.json tests/sss-1.test.ts --timeout 120000
+npx ts-mocha -p ./tsconfig.json tests/sss-2.test.ts --timeout 120000
+npx ts-mocha -p ./tsconfig.json tests/fuzz.test.ts --timeout 300000
 ```
 
-## Deployment
-
-### Backend (Docker)
-
-```bash
-cd backend
-docker-compose up -d
-```
-
-Services:
-- API: http://localhost:3000
-- Compliance: http://localhost:3001
-- PostgreSQL: localhost:5432
-- Redis: localhost:6379
-
-### Devnet Program
-
-```bash
-anchor deploy --provider.cluster devnet
-```
+See [docs/TESTING.md](./docs/TESTING.md) for complete test guide.
 
 ## Documentation
 
-- [Architecture Overview](./docs/ARCHITECTURE.md)
-- [SSS-1 Specification](./docs/SSS-1.md)
-- [SSS-2 Specification](./docs/SSS-2.md)
-- [SDK Reference](./docs/SDK.md)
-- [Operations Guide](./docs/OPERATIONS.md)
-- [Compliance Framework](./docs/COMPLIANCE.md)
-- [API Reference](./docs/API.md)
+| Document | Description |
+|---|---|
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System architecture and flow diagrams |
+| [SSS-1.md](./docs/SSS-1.md) | Minimal preset specification |
+| [SSS-2.md](./docs/SSS-2.md) | Compliant preset specification |
+| [SSS-3.md](./docs/SSS-3.md) | Private preset specification |
+| [SDK.md](./docs/SDK.md) | SDK API reference |
+| [OPERATIONS.md](./docs/OPERATIONS.md) | CLI operations guide |
+| [API.md](./docs/API.md) | REST API reference |
+| [COMPLIANCE.md](./docs/COMPLIANCE.md) | Compliance framework |
+| [SECURITY.md](./docs/SECURITY.md) | Security model |
+| [PRIVACY.md](./docs/PRIVACY.md) | Privacy & confidential transfers |
+| [DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Deployment guide |
+| [TESTING.md](./docs/TESTING.md) | Testing guide |
+| [REQUIREMENTS_TRACEABILITY.md](./docs/REQUIREMENTS_TRACEABILITY.md) | Requirements matrix |
 
 ## Security
 
@@ -254,7 +261,8 @@ anchor deploy --provider.cluster devnet
 - Emergency pause capability
 - Permanent delegate for crisis recovery
 - Asset seizure from blacklisted accounts
-- Comprehensive audit logging
+- HMAC-signed webhooks with idempotency
+- Comprehensive audit logging (13+ event types)
 
 ## License
 
@@ -265,3 +273,5 @@ MIT License - see [LICENSE](./LICENSE)
 - Solana Foundation
 - Anchor Framework
 - Token-2022 Team
+- Pyth Network
+- Superteam Brazil

@@ -640,6 +640,7 @@ pub struct ManageBlacklist<'info> {
         payer = authority,
         space = 8 + 200,
         seeds = [b"blacklist", config.key().as_ref(), target_address.key().as_ref()],
+        bump,
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
     
@@ -662,6 +663,7 @@ pub struct ManageWhitelist<'info> {
         payer = authority,
         space = 8 + 100,
         seeds = [b"whitelist", config.key().as_ref(), target_address.key().as_ref()],
+        bump,
     )]
     pub whitelist_entry: Account<'info, WhitelistEntry>,
     

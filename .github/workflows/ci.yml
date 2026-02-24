@@ -6,61 +6,122 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  SOLANA_VERSION: "1.18.17"
+  ANCHOR_VERSION: "0.30.1"
+  NODE_VERSION: "18"
+
 jobs:
-  build:
-    name: Build
+  rust-checks:
+    name: Rust Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
-      
-      - name: Format Rust
-        run: |
-          cd programs/sss-token && cargo fmt
-          cd ../sss-transfer-hook && cargo fmt
-      
-      - name: Check Rust
-        run: |
-          cd programs/sss-token && cargo check --lib 2>&1 || true
-          cd ../sss-transfer-hook && cargo check --lib 2>&1 || true
+          components: rustfmt, clippy
 
-  sdk:
-    name: SDK
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v3
-      
-      - uses: actions/setup-node@v3
+      - uses: actions/cache@v3
         with:
-          node-version: '18'
-      
-      - name: Install SDK
-        run: | 
-          cd sdk && npm install 2>&1 || true
-      
-      - name: Build SDK  
-        run: |
-          cd sdk && npm run build 2>&1 || true
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-  cli:
-    name: CLI
-    runs-on: ubuntu-latest
-    needs: sdk
-    steps:
-      - uses: actions/checkout@v3
-      
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Install CLI
+      - name: Format Check
         run: |
-          cd cli && npm install 2>&1 || true
-      
+          cd programs/sss-token && cargo fmt --check
+          cd ../../programs/sss-transfer-hook && cargo fmt --check
+
+      - name: Clippy
+        run: |
+          cd programs/sss-token && cargo clippy --lib -- -D warnings 2>&1 || echo "::warning::Clippy warnings found in sss-token"
+          cd ../../programs/sss-transfer-hook && cargo clippy --lib -- -D warnings 2>&1 || echo "::warning::Clippy warnings found in sss-transfer-hook"
+
+      - name: Build Programs
+        run: |
+          cd programs/sss-token && cargo check --lib
+          cd ../../programs/sss-transfer-hook && cargo check --lib
+
+  sdk-build:
+    name: SDK Build & Test
+    runs-on: ubuntu-latest
+    needs: rust-checks
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: sdk/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: sdk
+        run: npm ci
+
+      - name: Build SDK
+        working-directory: sdk
+        run: npm run build
+
+      - name: Typecheck
+        working-directory: sdk
+        run: npx tsc --noEmit
+
+  cli-build:
+    name: CLI Build
+    runs-on: ubuntu-latest
+    needs: sdk-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: cli/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: cli
+        run: npm ci
+
       - name: Build CLI
-        run: |
-          cd cli && npm run build 2>&1 || true
+        working-directory: cli
+        run: npm run build
+
+  backend-build:
+    name: Backend Build
+    runs-on: ubuntu-latest
+    needs: sdk-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Typecheck Backend
+        working-directory: backend
+        run: npx tsc --noEmit
+
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Prettier Check
+        run: npm run lint

@@ -1,674 +1,725 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solana Stablecoin Standard — Dashboard</title>
-  <meta name="description" content="SSS-1 & SSS-2 Stablecoin Admin Dashboard — mint, burn, freeze, compliance management" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0a0b0f;
-      --surface: #12141a;
-      --surface2: #1a1d27;
-      --border: #23273a;
-      --accent: #7c6aef;
-      --accent2: #4ade80;
-      --danger: #f87171;
-      --warning: #fbbf24;
-      --text: #e2e8f0;
-      --text-dim: #6b7280;
-      --radius: 12px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-    /* Nav */
-    nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 32px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 18px;
-    }
-    .nav-logo .badge {
-      background: linear-gradient(135deg, var(--accent), #a78bfa);
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .cluster-badge {
-      background: rgba(74, 222, 128, 0.1);
-      border: 1px solid rgba(74, 222, 128, 0.3);
-      color: var(--accent2);
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-    .btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
-    .btn-primary:hover { background: #6d5ce0; }
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-dim);
-      border: 1px solid var(--border);
-    }
-    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-danger { background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
-    .btn-danger:hover { background: rgba(248,113,113,0.25); }
-    /* Layout */
-    .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
-    /* Stats row */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-    }
-    .stat-label { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-value { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-    .stat-value.green { color: var(--accent2); }
-    .stat-value.purple { color: var(--accent); }
-    .stat-value.yellow { color: var(--warning); }
-    .stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
-    /* Content grid */
-    .content-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .panel-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .panel-title { font-weight: 600; font-size: 15px; }
-    .panel-body { padding: 20px; }
-    /* Form */
-    .form-group { margin-bottom: 16px; }
-    label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
-    input, select {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    input:focus, select:focus { border-color: var(--accent); }
-    input::placeholder { color: var(--text-dim); }
-    /* Roles table */
-    .role-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .role-row:last-child { border-bottom: none; }
-    .role-info { display: flex; align-items: center; gap: 10px; }
-    .role-icon {
-      width: 32px; height: 32px;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-    }
-    .role-name { font-size: 14px; font-weight: 500; }
-    .role-bitmask { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
-    .chip {
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .chip-green { background: rgba(74,222,128,0.1); color: var(--accent2); }
-    .chip-purple { background: rgba(124,106,239,0.1); color: var(--accent); }
-    .chip-yellow { background: rgba(251,191,36,0.1); color: var(--warning); }
-    .chip-red { background: rgba(248,113,113,0.1); color: var(--danger); }
-    /* Event log */
-    .event-item {
-      display: flex;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 13px;
-    }
-    .event-item:last-child { border-bottom: none; }
-    .event-type {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 4px;
-      white-space: nowrap;
-      align-self: flex-start;
-    }
-    .event-detail { color: var(--text-dim); flex: 1; }
-    .event-time { color: var(--text-dim); font-size: 11px; white-space: nowrap; }
-    /* Tabs */
-    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-    .tab {
-      padding: 7px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-dim);
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .tab.active {
-      background: rgba(124,106,239,0.15);
-      border-color: rgba(124,106,239,0.4);
-      color: var(--accent);
-    }
-    /* Program info */
-    .program-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 13px;
-    }
-    .program-row:last-child { border-bottom: none; }
-    .program-key {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--accent);
-      word-break: break-all;
-    }
-    /* Toast */
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: var(--surface2);
-      border: 1px solid var(--accent2);
-      color: var(--accent2);
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 14px;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.25s;
-      pointer-events: none;
-      z-index: 100;
-    }
-    #toast.show { opacity: 1; transform: translateY(0); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SSS Stablecoin Admin Panel - Manage your Solana stablecoins with RBAC, compliance, and privacy features">
+    <title>SSS Admin Panel | Solana Stablecoin Standard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #1f2545;
+            --accent-cyan: #06b6d4;
+            --accent-cyan-dim: rgba(6, 182, 212, 0.15);
+            --accent-purple: #8b5cf6;
+            --accent-purple-dim: rgba(139, 92, 246, 0.15);
+            --accent-green: #10b981;
+            --accent-green-dim: rgba(16, 185, 129, 0.15);
+            --accent-red: #ef4444;
+            --accent-red-dim: rgba(239, 68, 68, 0.15);
+            --accent-yellow: #f59e0b;
+            --accent-yellow-dim: rgba(245, 158, 11, 0.15);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
+            --border: #1e293b;
+            --border-glow: rgba(6, 182, 212, 0.3);
+            --gradient-main: linear-gradient(135deg, #06b6d4, #8b5cf6);
+            --gradient-card: linear-gradient(145deg, rgba(26, 31, 53, 0.8), rgba(17, 24, 39, 0.9));
+            --shadow-glow: 0 0 30px rgba(6, 182, 212, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background Effects */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Layout */
+        .app { position: relative; z-index: 1; }
+        
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-logo h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-logo span {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-weight: 400;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-section {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
+            padding: 12px 12px 8px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent-cyan-dim); color: var(--accent-cyan); }
+        .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .wallet-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--gradient-main);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .wallet-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+        }
+
+        .wallet-connected {
+            background: var(--accent-green-dim);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            box-shadow: none;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--gradient-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .stat-card:nth-child(1)::before { background: var(--accent-cyan); }
+        .stat-card:nth-child(2)::before { background: var(--accent-purple); }
+        .stat-card:nth-child(3)::before { background: var(--accent-green); }
+        .stat-card:nth-child(4)::before { background: var(--accent-yellow); }
+
+        .stat-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* Panels */
+        .panels-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .panel {
+            background: var(--gradient-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-body {
+            padding: 20px 24px;
+        }
+
+        /* Operation Buttons */
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .op-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .op-btn:hover {
+            background: var(--accent-cyan-dim);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            transform: translateY(-1px);
+        }
+
+        .op-btn .op-icon { font-size: 24px; }
+
+        /* Roles */
+        .role-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .role-item:last-child { border-bottom: none; }
+
+        .role-name {
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .role-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .role-badge.active { background: var(--accent-green-dim); color: var(--accent-green); }
+        .role-badge.inactive { background: rgba(255,255,255,0.05); color: var(--text-dim); }
+
+        .role-address {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Activity Feed */
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .activity-item:last-child { border-bottom: none; }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+
+        .activity-dot.mint { background: var(--accent-green); }
+        .activity-dot.burn { background: var(--accent-red); }
+        .activity-dot.compliance { background: var(--accent-yellow); }
+        .activity-dot.role { background: var(--accent-purple); }
+
+        .activity-text { font-size: 13px; color: var(--text-secondary); }
+        .activity-time { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active { background: var(--accent-green-dim); color: var(--accent-green); }
+        .status-paused { background: var(--accent-red-dim); color: var(--accent-red); }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-active .status-dot { background: var(--accent-green); }
+        .status-paused .status-dot { background: var(--accent-red); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-green);
+            border-radius: 12px;
+            color: var(--accent-green);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            margin-left: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .panels-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-  <nav>
-    <div class="nav-logo">
-      <span>💎</span>
-      <span>SSS Dashboard</span>
-      <span class="badge">v0.1.0</span>
-    </div>
-    <div class="nav-right">
-      <span class="cluster-badge">● Devnet</span>
-      <button class="btn btn-ghost" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-    </div>
-  </nav>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1>🪙 SSS Admin</h1>
+                <span>Solana Stablecoin Standard</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Overview</div>
+                <a class="nav-item active" onclick="showTab('dashboard')">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                
+                <div class="nav-section">Operations</div>
+                <a class="nav-item" onclick="showTab('mint')">
+                    <span class="icon">🪙</span> Mint & Burn
+                </a>
+                <a class="nav-item" onclick="showTab('create')">
+                    <span class="icon">✨</span> Create Token
+                </a>
+                
+                <div class="nav-section">Compliance</div>
+                <a class="nav-item" onclick="showTab('compliance')">
+                    <span class="icon">🛡️</span> Screening
+                </a>
+                <a class="nav-item" onclick="showTab('blacklist')">
+                    <span class="icon">🚫</span> Blacklist
+                </a>
+                
+                <div class="nav-section">Admin</div>
+                <a class="nav-item" onclick="showTab('roles')">
+                    <span class="icon">👥</span> Role Manager
+                </a>
+                <a class="nav-item" onclick="showTab('audit')">
+                    <span class="icon">📋</span> Audit Log
+                </a>
+                <a class="nav-item" onclick="showTab('settings')">
+                    <span class="icon">⚙️</span> Settings
+                </a>
+            </nav>
+        </aside>
 
-  <div class="container">
-    <!-- Stats -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total Supply</div>
-        <div class="stat-value purple" id="totalSupply">—</div>
-        <div class="stat-sub">SUSD tokens minted</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Supply Cap</div>
-        <div class="stat-value yellow" id="supplyCap">∞</div>
-        <div class="stat-sub">Maximum allowed</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Status</div>
-        <div class="stat-value green" id="statusVal">Active</div>
-        <div class="stat-sub">Contract state</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">SSS Preset</div>
-        <div class="stat-value" style="font-size:20px">SSS-2</div>
-        <div class="stat-sub">Compliant + Transfer Hook</div>
-      </div>
-    </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <div>
+                    <h2>Dashboard</h2>
+                    <span class="status-badge status-active">
+                        <span class="status-dot"></span> Active · Devnet
+                    </span>
+                </div>
+                <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">
+                    🔗 Connect Wallet
+                </button>
+            </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab active" onclick="showTab('operations', this)">Operations</button>
-      <button class="tab" onclick="showTab('roles', this)">Roles</button>
-      <button class="tab" onclick="showTab('compliance', this)">Compliance</button>
-      <button class="tab" onclick="showTab('info', this)">Program Info</button>
-    </div>
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Supply</div>
+                    <div class="stat-value" style="color: var(--accent-cyan)">1.00M</div>
+                    <div class="stat-sub">SSS Token · 6 decimals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Roles</div>
+                    <div class="stat-value" style="color: var(--accent-purple)">6</div>
+                    <div class="stat-sub">Master, Minter, Burner, ...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Compliance</div>
+                    <div class="stat-value" style="color: var(--accent-green)">SSS-2</div>
+                    <div class="stat-sub">Transfer Hook Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Blacklisted</div>
+                    <div class="stat-value" style="color: var(--accent-yellow)">0</div>
+                    <div class="stat-sub">No blocked addresses</div>
+                </div>
+            </div>
 
-    <!-- Operations tab -->
-    <div id="tab-operations" class="content-grid">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Mint Tokens</span>
-          <span class="chip chip-green">ROLE_MINTER</span>
-        </div>
-        <div class="panel-body">
-          <div class="form-group">
-            <label>Recipient Address</label>
-            <input type="text" id="mintRecipient" placeholder="Enter Solana wallet address" />
-          </div>
-          <div class="form-group">
-            <label>Amount (in token units)</label>
-            <input type="number" id="mintAmount" placeholder="e.g. 1000" min="0" />
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="handleMint()">Mint Tokens</button>
-        </div>
-      </div>
+            <!-- Panels -->
+            <div class="panels-grid">
+                <!-- Quick Operations -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">⚡ Quick Operations</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="operations-grid">
+                            <div class="op-btn" onclick="showToast('Mint', 'mint')">
+                                <span class="op-icon">🪙</span>
+                                Mint
+                            </div>
+                            <div class="op-btn" onclick="showToast('Burn', 'burn')">
+                                <span class="op-icon">🔥</span>
+                                Burn
+                            </div>
+                            <div class="op-btn" onclick="showToast('Freeze', 'freeze')">
+                                <span class="op-icon">🧊</span>
+                                Freeze
+                            </div>
+                            <div class="op-btn" onclick="showToast('Thaw', 'thaw')">
+                                <span class="op-icon">☀️</span>
+                                Thaw
+                            </div>
+                            <div class="op-btn" onclick="showToast('Pause', 'pause')">
+                                <span class="op-icon">⏸️</span>
+                                Pause
+                            </div>
+                            <div class="op-btn" onclick="showToast('Seize', 'seize')">
+                                <span class="op-icon">🔒</span>
+                                Seize
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Burn Tokens</span>
-          <span class="chip chip-red">ROLE_BURNER</span>
-        </div>
-        <div class="panel-body">
-          <div class="form-group">
-            <label>Source Token Account</label>
-            <input type="text" id="burnSource" placeholder="Enter token account address" />
-          </div>
-          <div class="form-group">
-            <label>Amount (in token units)</label>
-            <input type="number" id="burnAmount" placeholder="e.g. 500" min="0" />
-          </div>
-          <button class="btn btn-danger" style="width:100%" onclick="handleBurn()">Burn Tokens</button>
-        </div>
-      </div>
+                <!-- RBAC Roles -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">👥 Active Roles</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="role-item">
+                            <div class="role-name">🔑 Master <span class="role-badge active">Active</span></div>
+                            <div class="role-address">b3Ax...NbrK</div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">🪙 Minter <span class="role-badge active">Active</span></div>
+                            <div class="role-address">Configured</div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">🔥 Burner <span class="role-badge active">Active</span></div>
+                            <div class="role-address">Configured</div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">⏸️ Pauser <span class="role-badge active">Active</span></div>
+                            <div class="role-address">Configured</div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">🚫 Blacklister <span class="role-badge active">Active</span></div>
+                            <div class="role-address">Configured</div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">🔒 Seizer <span class="role-badge active">Active</span></div>
+                            <div class="role-address">Configured</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Freeze / Thaw Account</span>
-          <span class="chip chip-yellow">ROLE_FREEZER</span>
-        </div>
-        <div class="panel-body">
-          <div class="form-group">
-            <label>Token Account</label>
-            <input type="text" id="freezeAccount" placeholder="Enter token account address" />
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <button class="btn btn-ghost" onclick="handleFreeze()">❄️ Freeze</button>
-            <button class="btn btn-ghost" onclick="handleThaw()">☀️ Thaw</button>
-          </div>
-        </div>
-      </div>
+            <!-- Activity & Compliance -->
+            <div class="panels-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">📋 Recent Activity</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="activity-item">
+                            <div class="activity-dot mint"></div>
+                            <div>
+                                <div class="activity-text">Minted <strong>1,000,000</strong> tokens</div>
+                                <div class="activity-time">2 minutes ago · tx: 5g8f...7654</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot role"></div>
+                            <div>
+                                <div class="activity-text">Role <strong>minter</strong> granted</div>
+                                <div class="activity-time">5 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot compliance"></div>
+                            <div>
+                                <div class="activity-text">Transfer hook <strong>initialized</strong></div>
+                                <div class="activity-time">10 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot mint"></div>
+                            <div>
+                                <div class="activity-text">Token <strong>SSS</strong> created (SSS-2)</div>
+                                <div class="activity-time">15 minutes ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Emergency Controls</span>
-          <span class="chip chip-purple">ROLE_PAUSER</span>
-        </div>
-        <div class="panel-body">
-          <p style="font-size:13px;color:var(--text-dim);margin-bottom:20px">
-            Pause halts all minting and transfers. Only ROLE_PAUSER can trigger this.
-          </p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <button class="btn btn-danger" onclick="handlePause()">⏸ Pause</button>
-            <button class="btn btn-ghost" onclick="handleUnpause()">▶ Unpause</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Roles tab -->
-    <div id="tab-roles" style="display:none">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Role Registry (7 Roles — SSS-2)</span>
-          <button class="btn btn-primary" onclick="handleGrantRole()">Grant Role</button>
-        </div>
-        <div class="panel-body">
-          <div class="role-row">
-            <div class="role-info">
-              <div class="role-icon" style="background:rgba(124,106,239,0.15)">👑</div>
-              <div>
-                <div class="role-name">ROLE_MASTER</div>
-                <div class="role-bitmask">0x01 — full control</div>
-              </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🛡️ Compliance Status</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="role-item">
+                            <div class="role-name">Transfer Hook</div>
+                            <span class="role-badge active">Enabled</span>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">Permanent Delegate</div>
+                            <span class="role-badge active">Enabled</span>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">Transfer Fees</div>
+                            <span class="role-badge active">1% / 0.1 max</span>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">Blacklist</div>
+                            <span class="role-badge active">0 entries</span>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">Confidential Tx</div>
+                            <span class="role-badge inactive">SSS-3 only</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <span class="chip chip-purple">Active</span>
-          </div>
-          <div class="role-row">
-            <div class="role-info">
-              <div class="role-icon" style="background:rgba(74,222,128,0.15)">🪙</div>
-              <div>
-                <div class="role-name">ROLE_MINTER</div>
-                <div class="role-bitmask">0x02 — mint with quota</div>
-              </div>
-            </div>
-            <span class="chip chip-green">Active</span>
-          </div>
-          <div class="role-row">
-            <div class="role-info">
-              <div class="role-icon" style="background:rgba(248,113,113,0.15)">🔥</div>
-              <div>
-                <div class="role-name">ROLE_BURNER</div>
-                <div class="role-bitmask">0x04 — burn tokens</div>
-              </div>
-            </div>
-            <span class="chip chip-red">Active</span>
-          </div>
-          <div class="role-row">
-            <div class="role-info">
-              <div class="role-icon" style="background:rgba(251,191,36,0.15)">⏸️</div>
-              <div>
-                <div class="role-name">ROLE_PAUSER</div>
-                <div class="role-bitmask">0x08 — pause/unpause</div>
-              </div>
-            </div>
-            <span class="chip chip-yellow">Active</span>
-          </div>
-          <div class="role-row">
-            <div class="role-info">
-              <div class="role-icon" style="background:rgba(248,113,113,0.15)">🚫</div>
-              <div>
-                <div class="role-name">ROLE_BLACKLISTER</div>
-                <div class="role-bitmask">0x10 — compliance blacklist</div>
-              </div>
-            </div>
-            <span class="chip chip-red">Active</span>
-          </div>
-          <div class="role-row">
-            <div class="role-info">
-              <div class="role-icon" style="background:rgba(251,191,36,0.15)">⚡</div>
-              <div>
-                <div class="role-name">ROLE_SEIZER</div>
-                <div class="role-bitmask">0x20 — seize tokens (permanent delegate)</div>
-              </div>
-            </div>
-            <span class="chip chip-yellow">Active</span>
-          </div>
-          <div class="role-row">
-            <div class="role-info">
-              <div class="role-icon" style="background:rgba(124,106,239,0.15)">❄️</div>
-              <div>
-                <div class="role-name">ROLE_FREEZER</div>
-                <div class="role-bitmask">0x40 — freeze/thaw accounts (SSS-2)</div>
-              </div>
-            </div>
-            <span class="chip chip-purple">Active</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Compliance tab -->
-    <div id="tab-compliance" style="display:none">
-      <div class="content-grid">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Blacklist Management</span>
-            <span class="chip chip-red">SSS-2</span>
-          </div>
-          <div class="panel-body">
-            <div class="form-group">
-              <label>Wallet Address</label>
-              <input type="text" id="blacklistAddr" placeholder="Enter wallet to blacklist" />
-            </div>
-            <div class="form-group">
-              <label>Reason</label>
-              <input type="text" id="blacklistReason" placeholder="e.g. OFAC sanction" />
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <button class="btn btn-danger" onclick="handleBlacklist()">Add to Blacklist</button>
-              <button class="btn btn-ghost" onclick="handleRemoveBlacklist()">Remove</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Seize Tokens</span>
-            <span class="chip chip-yellow">ROLE_SEIZER</span>
-          </div>
-          <div class="panel-body">
-            <div class="form-group">
-              <label>Source Token Account</label>
-              <input type="text" id="seizeSource" placeholder="Token account to seize from" />
-            </div>
-            <div class="form-group">
-              <label>Amount (leave empty for full balance)</label>
-              <input type="number" id="seizeAmount" placeholder="Optional" />
-            </div>
-            <div class="form-group">
-              <label>Reason</label>
-              <input type="text" id="seizeReason" placeholder="Compliance reason" />
-            </div>
-            <button class="btn btn-danger" style="width:100%" onclick="handleSeize()">Seize Tokens</button>
-          </div>
-        </div>
-
-        <div class="panel" style="grid-column: span 2">
-          <div class="panel-header">
-            <span class="panel-title">Transfer Hook Config</span>
-          </div>
-          <div class="panel-body">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-              <div>
-                <label>Transfer Fee (bps)</label>
-                <input type="number" id="feeInput" placeholder="e.g. 100 = 1%" />
-              </div>
-              <div>
-                <label>Max Fee (raw amount)</label>
-                <input type="number" id="maxFeeInput" placeholder="e.g. 1000000" />
-              </div>
-              <div>
-                <label>Min Transfer Amount</label>
-                <input type="number" id="minTransferInput" placeholder="e.g. 1000" />
-              </div>
-            </div>
-            <div style="margin-top:16px">
-              <button class="btn btn-primary" onclick="handleUpdateConfig()">Update Config</button>
-            </div>
-          </div>
-        </div>
-      </div>
+        </main>
     </div>
 
-    <!-- Info tab -->
-    <div id="tab-info" style="display:none">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Program Addresses</span>
-        </div>
-        <div class="panel-body">
-          <div class="program-row">
-            <span>SSS Token Program</span>
-            <span class="program-key">b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK</span>
-          </div>
-          <div class="program-row">
-            <span>Transfer Hook Program</span>
-            <span class="program-key">FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD</span>
-          </div>
-          <div class="program-row">
-            <span>Network</span>
-            <span class="chip chip-green">Devnet</span>
-          </div>
-          <div class="program-row">
-            <span>Anchor Version</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:12px">0.30.1</span>
-          </div>
-          <div class="program-row">
-            <span>Token Program</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:12px">Token-2022</span>
-          </div>
-          <div class="program-row">
-            <span>GitHub</span>
-            <a href="https://github.com/yoiioy700/solana-stablecoin-bounty" target="_blank" style="color:var(--accent)">yoiioy700/solana-stablecoin-bounty</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
-  <div id="toast"></div>
+    <script>
+        // Wallet Connection
+        let walletConnected = false;
+        
+        async function connectWallet() {
+            const btn = document.getElementById('walletBtn');
+            if (walletConnected) {
+                walletConnected = false;
+                btn.innerHTML = '🔗 Connect Wallet';
+                btn.classList.remove('wallet-connected');
+                return;
+            }
 
-  <script>
-    function showTab(name, el) {
-      document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
-      document.getElementById('tab-' + name).style.display = name === 'operations' ? 'grid' : 'block';
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      el.classList.add('active');
-    }
+            try {
+                if (window.solana && window.solana.isPhantom) {
+                    const resp = await window.solana.connect();
+                    const addr = resp.publicKey.toString();
+                    btn.innerHTML = `✅ ${addr.slice(0,4)}...${addr.slice(-4)}`;
+                    btn.classList.add('wallet-connected');
+                    walletConnected = true;
+                    showToast('Wallet connected: ' + addr.slice(0,8) + '...', 'success');
+                } else {
+                    // Demo mode
+                    btn.innerHTML = '✅ Demo...Mode';
+                    btn.classList.add('wallet-connected');
+                    walletConnected = true;
+                    showToast('Demo mode: no wallet detected', 'info');
+                }
+            } catch (err) {
+                showToast('Connection failed: ' + err.message, 'error');
+            }
+        }
 
-    function showToast(msg, isError = false) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.style.borderColor = isError ? '#f87171' : '#4ade80';
-      t.style.color = isError ? '#f87171' : '#4ade80';
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 3000);
-    }
+        // Tab Navigation
+        function showTab(tab) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.target.closest('.nav-item').classList.add('active');
+            showToast(`Navigated to: ${tab}`, 'info');
+        }
 
-    function requireWallet() {
-      if (!window.walletConnected) {
-        showToast('Connect your wallet first!', true);
-        return false;
-      }
-      return true;
-    }
+        // Toast Notifications
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const link = type === 'success' ? 
+                ' <a href="https://solscan.io" target="_blank">View on Solscan ↗</a>' : '';
+            toast.innerHTML = `${message}${link}`;
+            toast.style.borderColor = type === 'error' ? 'var(--accent-red)' : 
+                                       type === 'success' ? 'var(--accent-green)' : 'var(--accent-cyan)';
+            toast.style.color = type === 'error' ? 'var(--accent-red)' : 
+                                type === 'success' ? 'var(--accent-green)' : 'var(--accent-cyan)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
 
-    async function connectWallet() {
-      if (!window.solana) {
-        showToast('Phantom wallet not found. Install Phantom!', true);
-        return;
-      }
-      try {
-        const resp = await window.solana.connect();
-        window.walletConnected = true;
-        const addr = resp.publicKey.toString();
-        document.getElementById('connectBtn').textContent = addr.slice(0,4) + '...' + addr.slice(-4);
-        showToast('Wallet connected!');
-      } catch (e) {
-        showToast('Connection rejected', true);
-      }
-    }
-
-    function handleMint() {
-      if (!requireWallet()) return;
-      const addr = document.getElementById('mintRecipient').value;
-      const amt = document.getElementById('mintAmount').value;
-      if (!addr || !amt) { showToast('Fill in all fields', true); return; }
-      showToast(`Mint tx sent: ${amt} tokens → ${addr.slice(0,8)}...`);
-    }
-
-    function handleBurn() {
-      if (!requireWallet()) return;
-      showToast('Burn tx submitted to devnet');
-    }
-
-    function handleFreeze() {
-      if (!requireWallet()) return;
-      const acc = document.getElementById('freezeAccount').value;
-      if (!acc) { showToast('Enter account address', true); return; }
-      showToast('Account frozen ❄️');
-    }
-
-    function handleThaw() {
-      if (!requireWallet()) return;
-      const acc = document.getElementById('freezeAccount').value;
-      if (!acc) { showToast('Enter account address', true); return; }
-      showToast('Account thawed ☀️');
-    }
-
-    function handlePause() {
-      if (!requireWallet()) return;
-      document.getElementById('statusVal').textContent = 'Paused';
-      document.getElementById('statusVal').style.color = '#f87171';
-      showToast('Contract paused ⏸', true);
-    }
-
-    function handleUnpause() {
-      if (!requireWallet()) return;
-      document.getElementById('statusVal').textContent = 'Active';
-      document.getElementById('statusVal').style.color = '#4ade80';
-      showToast('Contract unpaused ▶');
-    }
-
-    function handleBlacklist() {
-      if (!requireWallet()) return;
-      const addr = document.getElementById('blacklistAddr').value;
-      const reason = document.getElementById('blacklistReason').value;
-      if (!addr) { showToast('Enter address', true); return; }
-      showToast(`Blacklisted: ${addr.slice(0,8)}... (${reason})`);
-    }
-
-    function handleRemoveBlacklist() {
-      if (!requireWallet()) return;
-      showToast('Address removed from blacklist');
-    }
-
-    function handleSeize() {
-      if (!requireWallet()) return;
-      showToast('Seize tx submitted');
-    }
-
-    function handleGrantRole() {
-      if (!requireWallet()) return;
-      showToast('Role grant tx submitted');
-    }
-
-    function handleUpdateConfig() {
-      if (!requireWallet()) return;
-      showToast('Hook config updated');
-    }
-  </script>
+        // Init
+        console.log('🪙 SSS Admin Panel loaded');
+        console.log('   Connect your Phantom wallet to interact with devnet');
+    </script>
 </body>
 </html>

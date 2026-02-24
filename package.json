@@ -4,6 +4,8 @@
   "license": "ISC",
   "scripts": {
     "test": "anchor test",
+    "tui": "cd tui && npx ts-node src/index.tsx",
+    "frontend": "cd app && npx serve .",
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
   },

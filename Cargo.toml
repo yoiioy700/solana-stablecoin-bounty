@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "programs/*"
+    "programs/sss-token",
+    "programs/sss-transfer-hook"
 ]
 resolver = "2"
 
