@@ -3,11 +3,11 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-sss_token = "b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK"
+sss_token = "GGn7LQPiN8VsfYgL7cHPyzbABJsLaaioGBt6m2KwruSq"
 sss2_hook = "FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD"
 
 [programs.devnet]
-sss_token = "b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK"
+sss_token = "GGn7LQPiN8VsfYgL7cHPyzbABJsLaaioGBt6m2KwruSq"
 sss2_hook = "FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD"
 
 [registry]
