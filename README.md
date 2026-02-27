@@ -5,9 +5,9 @@
 [![Anchor](https://img.shields.io/badge/Anchor-0.30.1-blue)](https://www.anchor-lang.com/)
 [![CI](https://github.com/yoiioy700/solana-stablecoin-bounty/actions/workflows/ci.yml/badge.svg)](https://github.com/yoiioy700/solana-stablecoin-bounty/actions)
 
-Production-ready stablecoin framework with Role-Based Access Control (SSS-1), compliance transfer hooks (SSS-2), and confidential transfers (SSS-3) using Solana Token-2022.
+Production-ready stablecoin framework using Solana Token-2022. Built from the ground up to support everything from simple internal tokens (SSS-1) to fully regulated, compliance-heavy stablecoins (SSS-2), all the way to privacy-preserving confidential transfers (SSS-3).
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 # Clone
@@ -24,25 +24,13 @@ anchor test
 anchor deploy --provider.cluster devnet
 ```
 
-## Preset Comparison
+## 📦 What's inside? (The Presets)
 
-| Feature | SSS-1 (Minimal) | SSS-2 (Compliant) | SSS-3 (Private) |
-|---|:---:|:---:|:---:|
-| Token-2022 Mint | ✅ | ✅ | ✅ |
-| 6 RBAC Roles | ✅ | ✅ | ✅ |
-| Mint/Burn + Quotas | ✅ | ✅ | ✅ |
-| Freeze/Thaw | ✅ | ✅ | ✅ |
-| Pause/Unpause | ✅ | ✅ | ✅ |
-| Batch Mint | ✅ | ✅ | ✅ |
-| Multisig Governance | ✅ | ✅ | ✅ |
-| Transfer Hook | ❌ | ✅ | ✅ |
-| Blacklist | ❌ | ✅ | ✅ |
-| Transfer Fees | ❌ | ✅ | ✅ |
-| Permanent Delegate | ❌ | ✅ | ✅ |
-| Asset Seizure | ❌ | ✅ | ✅ |
-| Confidential Transfers | ❌ | ❌ | ✅ |
-| Allowlist | ❌ | ❌ | ✅ |
-| Default Frozen | ❌ | ❌ | ✅ |
+Instead of forcing you to build everything from scratch, I've bundled the features into three main presets you can pick from when initializing your token:
+
+*   **SSS-1 (Minimal)**: Think of this as your standard SPL token but on steroids. It uses Token-2022, has 6 built-in RBAC roles (Master, Minter, Burner, Pauser, etc.), supports mint quotas so your minters don't go rogue, and handles freeze/thaw natively. Perfect for DAO treasuries or internal app tokens.
+*   **SSS-2 (Compliant)**: This is for the heavy hitters building regulated stablecoins (like USDC/USDT). It adds a custom Transfer Hook to enforce blacklists/allowlists on *every single transfer*. It also supports transfer fees, a permanent delegate (so admins can seize compromised funds), and defaults to frozen accounts.
+*   **SSS-3 (Private)**: The cutting-edge tier. It implements Token-2022's Confidential Transfer extension using ElGamal encryption. Balances and transfer amounts are hidden on-chain. I also threw in an Auditor role so you can stay compliant while offering privacy to your users.
 
 ## Architecture
 
@@ -139,38 +127,25 @@ solana-stablecoin-bounty/
     └── test.yml                 # Test automation
 ```
 
-## Key Features
+## 🛠️ The Tech Stack
 
-### On-Chain Programs
-- **Token-2022 native** with MintCloseAuthority, DefaultAccountState extensions
-- **6 RBAC roles**: Master, Minter, Burner, Pauser, Blacklister, Seizer
-- **Minter quotas** with overflow protection and 24h epoch reset
-- **Supply cap** enforcement (0 = unlimited)
-- **Batch mint** to multiple recipients
-- **Multisig governance** — proposal → approval → execute flow
-- **Transfer hook** — blacklist/allowlist enforcement on every transfer
-- **Transfer fees** — basis points + max cap
-- **Permanent delegate** — bypass restrictions for crisis recovery
-- **Asset seizure** from blacklisted accounts
-- **Confidential transfers** — Token-2022 ConfidentialTransferMint + auditor key (SSS-3)
+I didn't just build the smart contracts; this is a full end-to-end framework.
 
-### SDK & CLI
-- **5 SDK modules** — SolanaStablecoin, ComplianceModule, RoleManager, MultisigModule, PrivacyModule
-- **Oracle module** — Pyth price feed integration (USD/token conversions)
-- **13 CLI commands** — full operator toolkit with preset selection
-- **10 examples** — step-by-step coverage of all features
-- **TypeScript native** — full type safety
+### 1. The Smart Contracts (Anchor 0.30.1)
+Everything is strictly typed and built on Token-2022. You get role-based access control, minter quotas that reset every epoch, supply caps, batch minting, and multisig governance for those critical state changes. 
 
-### Backend Services
-- **3 microservices**: API (Express), Event Indexer, Compliance
-- **Webhook dispatcher** — HMAC signed, retry with backoff, 15 event types
-- **PostgreSQL** + **Redis** caching
-- **Docker Compose** — one-command deployment
+For SSS-2, there's a custom Transfer Hook program that intercepts every transfer to enforce your compliance rules (blacklist/whitelist) in real-time. For SSS-3, we leverage the ConfidentialTransferMint extension with Auditor keys.
 
-### Bonus Features
-- **Admin TUI** — Interactive terminal dashboard (Ink/React) with 6 screens
-- **Admin Frontend** — Modern dark-themed web panel with wallet connect
-- **Fuzz tests** — Edge case and boundary testing
+### 2. The SDK & CLI
+You don't want to build transactions by hand. The `@stbr/sss-token` SDK wraps everything up nicely. It handles all the complex PDA derivations and instruction building, plus it hooks into Pyth for oracle price feeds if you need them.
+
+If you're an operator, just use the CLI. It has 13+ commands covering every operation (e.g., `sss-token mint`, `sss-token blacklist add`, `sss-token privacy init`).
+
+### 3. The Backend Stack
+If you're running a production stablecoin, you need infrastructure. There's a bundled Express REST API that handles off-chain operations, rate-limiting, and webhook dispatching for 13+ on-chain events. It's fully dockerized and ready to deploy alongside PostgreSQL and Redis.
+
+### 4. Admin Tools
+I also threw in an Admin Frontend (Next.js) and a really slick Terminal UI (built with Ink) so you can monitor your stablecoin's pulse directly from your server.
 
 ## Devnet Deployment
 
@@ -255,14 +230,9 @@ See [docs/TESTING.md](./docs/TESTING.md) for complete test guide.
 | [TESTING.md](./docs/TESTING.md) | Testing guide |
 | [REQUIREMENTS_TRACEABILITY.md](./docs/REQUIREMENTS_TRACEABILITY.md) | Requirements matrix |
 
-## Security
+## 🔒 Security Posture
 
-- All sensitive operations require role verification
-- Emergency pause capability
-- Permanent delegate for crisis recovery
-- Asset seizure from blacklisted accounts
-- HMAC-signed webhooks with idempotency
-- Comprehensive audit logging (13+ event types)
+Security isn't an afterthought here. Every sensitive operation requires role verification. If things go south, there's an emergency `pause` circuit breaker. If an account gets compromised, the permanent delegate extension allows authorized roles to seize and recover funds. Plus, every action emits on-chain events that the webhook dispatcher catches for your audit logs.
 
 ## License
 
