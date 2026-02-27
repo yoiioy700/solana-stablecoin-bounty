@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { render, Box, Text, useApp, useInput } from "ink";
+import { render, Box, Text, useApp, useInput, Key } from "ink";
 import { Connection, PublicKey, Keypair } from "@solana/web3.js";
 
 // =============================================================================
@@ -264,7 +264,7 @@ const App = ({ mintAddress, rpcUrl }: { mintAddress: string; rpcUrl: string }) =
         }
     };
 
-    useInput((input, key) => {
+    useInput((input: string, key: Key) => {
         if (input === "q" || key.escape) {
             exit();
             return;
