@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { logger } from '../../shared/logger';
+import { Request, Response, NextFunction } from "express";
+import { logger } from "../../shared/logger";
 
 export function errorHandler(
   err: Error,
@@ -7,7 +7,7 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  logger.error('Error:', {
+  logger.error("Error:", {
     error: err.message,
     stack: err.stack,
     path: req.path,
@@ -20,7 +20,7 @@ export function errorHandler(
 
   res.status(500).json({
     success: false,
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    error: "Internal server error",
+    message: process.env.NODE_ENV === "development" ? err.message : undefined,
   });
 }

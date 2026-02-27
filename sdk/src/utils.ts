@@ -1,11 +1,11 @@
 /**
  * SDK Utilities for SSS Token
- * 
+ *
  * Helper functions for common operations
  */
 
-import { PublicKey, Connection, Commitment } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
+import { PublicKey, Connection, Commitment } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 import {
   SSS_TOKEN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
@@ -17,7 +17,7 @@ import {
   ROLE_PAUSER,
   ROLE_BLACKLISTER,
   ROLE_SEIZER,
-} from './types';
+} from "./types";
 
 // ============================================
 // PDA HELPERS
@@ -28,7 +28,7 @@ import {
  */
 export function getStablecoinPDA(mint: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('stablecoin'), mint.toBuffer()],
+    [Buffer.from("stablecoin"), mint.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -38,7 +38,7 @@ export function getStablecoinPDA(mint: PublicKey): PublicKey {
  */
 export function getMintPDA(stablecoin: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('mint'), stablecoin.toBuffer()],
+    [Buffer.from("mint"), stablecoin.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -48,7 +48,7 @@ export function getMintPDA(stablecoin: PublicKey): PublicKey {
  */
 export function getRolePDA(owner: PublicKey, mint: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('role'), owner.toBuffer(), mint.toBuffer()],
+    [Buffer.from("role"), owner.toBuffer(), mint.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -58,7 +58,7 @@ export function getRolePDA(owner: PublicKey, mint: PublicKey): PublicKey {
  */
 export function getMinterPDA(minter: PublicKey, mint: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('minter'), minter.toBuffer(), mint.toBuffer()],
+    [Buffer.from("minter"), minter.toBuffer(), mint.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -68,7 +68,7 @@ export function getMinterPDA(minter: PublicKey, mint: PublicKey): PublicKey {
  */
 export function getMultisigConfigPDA(stablecoin: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('multisig'), stablecoin.toBuffer()],
+    [Buffer.from("multisig"), stablecoin.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -83,10 +83,10 @@ export function getProposalPDA(
 ): PublicKey {
   return PublicKey.findProgramAddressSync(
     [
-      Buffer.from('proposal'),
+      Buffer.from("proposal"),
       multisigConfig.toBuffer(),
       proposer.toBuffer(),
-      timestamp.toArrayLike(Buffer, 'le', 8),
+      timestamp.toArrayLike(Buffer, "le", 8),
     ],
     SSS_TOKEN_PROGRAM_ID
   )[0];
@@ -97,7 +97,7 @@ export function getProposalPDA(
  */
 export function getMintAuthorityPDA(stablecoin: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('mint_authority'), stablecoin.toBuffer()],
+    [Buffer.from("mint_authority"), stablecoin.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -107,7 +107,7 @@ export function getMintAuthorityPDA(stablecoin: PublicKey): PublicKey {
  */
 export function getBurnAuthorityPDA(stablecoin: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('burn_authority'), stablecoin.toBuffer()],
+    [Buffer.from("burn_authority"), stablecoin.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -117,7 +117,7 @@ export function getBurnAuthorityPDA(stablecoin: PublicKey): PublicKey {
  */
 export function getFreezeAuthorityPDA(stablecoin: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('freeze_authority'), stablecoin.toBuffer()],
+    [Buffer.from("freeze_authority"), stablecoin.toBuffer()],
     SSS_TOKEN_PROGRAM_ID
   )[0];
 }
@@ -131,7 +131,7 @@ export function getFreezeAuthorityPDA(stablecoin: PublicKey): PublicKey {
  */
 export function getHookConfigPDA(mint: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('hook_config'), mint.toBuffer()],
+    [Buffer.from("hook_config"), mint.toBuffer()],
     SSS_TRANSFER_HOOK_PROGRAM_ID
   )[0];
 }
@@ -144,7 +144,7 @@ export function getBlacklistPDA(
   address: PublicKey
 ): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('blacklist'), config.toBuffer(), address.toBuffer()],
+    [Buffer.from("blacklist"), config.toBuffer(), address.toBuffer()],
     SSS_TRANSFER_HOOK_PROGRAM_ID
   )[0];
 }
@@ -157,7 +157,7 @@ export function getWhitelistPDA(
   address: PublicKey
 ): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from('whitelist'), config.toBuffer(), address.toBuffer()],
+    [Buffer.from("whitelist"), config.toBuffer(), address.toBuffer()],
     SSS_TRANSFER_HOOK_PROGRAM_ID
   )[0];
 }
@@ -172,14 +172,18 @@ export function getWhitelistPDA(
  */
 export function validateName(name: string): { valid: boolean; error?: string } {
   if (name.length === 0) {
-    return { valid: false, error: 'Name is required' };
+    return { valid: false, error: "Name is required" };
   }
   if (name.length > 32) {
-    return { valid: false, error: 'Name must be 32 characters or less' };
+    return { valid: false, error: "Name must be 32 characters or less" };
   }
   // Check for invalid characters
   if (!/^[a-zA-Z0-9 _-]+$/.test(name)) {
-    return { valid: false, error: 'Name can only contain letters, numbers, spaces, hyphens and underscores' };
+    return {
+      valid: false,
+      error:
+        "Name can only contain letters, numbers, spaces, hyphens and underscores",
+    };
   }
   return { valid: true };
 }
@@ -187,15 +191,18 @@ export function validateName(name: string): { valid: boolean; error?: string } {
 /**
  * Validate token symbol
  */
-export function validateSymbol(symbol: string): { valid: boolean; error?: string } {
+export function validateSymbol(symbol: string): {
+  valid: boolean;
+  error?: string;
+} {
   if (symbol.length === 0) {
-    return { valid: false, error: 'Symbol is required' };
+    return { valid: false, error: "Symbol is required" };
   }
   if (symbol.length > 10) {
-    return { valid: false, error: 'Symbol must be 10 characters or less' };
+    return { valid: false, error: "Symbol must be 10 characters or less" };
   }
   if (!/^[A-Z]+$/.test(symbol)) {
-    return { valid: false, error: 'Symbol must be uppercase letters only' };
+    return { valid: false, error: "Symbol must be uppercase letters only" };
   }
   return { valid: true };
 }
@@ -203,9 +210,12 @@ export function validateSymbol(symbol: string): { valid: boolean; error?: string
 /**
  * Validate decimals
  */
-export function validateDecimals(decimals: number): { valid: boolean; error?: string } {
+export function validateDecimals(decimals: number): {
+  valid: boolean;
+  error?: string;
+} {
   if (decimals < 0 || decimals > 9) {
-    return { valid: false, error: 'Decimals must be between 0 and 9' };
+    return { valid: false, error: "Decimals must be between 0 and 9" };
   }
   return { valid: true };
 }
@@ -218,17 +228,20 @@ export function validateBatch(
   amounts: BN[]
 ): { valid: boolean; error?: string } {
   if (recipients.length !== amounts.length) {
-    return { valid: false, error: 'Recipients and amounts length mismatch' };
+    return { valid: false, error: "Recipients and amounts length mismatch" };
   }
   if (recipients.length === 0) {
-    return { valid: false, error: 'At least one recipient required' };
+    return { valid: false, error: "At least one recipient required" };
   }
   if (recipients.length > 10) {
-    return { valid: false, error: 'Maximum 10 recipients per batch' };
+    return { valid: false, error: "Maximum 10 recipients per batch" };
   }
   for (let i = 0; i < recipients.length; i++) {
     if (amounts[i].lte(new BN(0))) {
-      return { valid: false, error: `Amount at index ${i} must be greater than 0` };
+      return {
+        valid: false,
+        error: `Amount at index ${i} must be greater than 0`,
+      };
     }
   }
   return { valid: true };
@@ -250,12 +263,12 @@ export function hasRole(roles: number, role: number): boolean {
  */
 export function decodeRoles(roles: number): string[] {
   const roleNames: string[] = [];
-  if (hasRole(roles, ROLE_MASTER)) roleNames.push('MASTER');
-  if (hasRole(roles, ROLE_MINTER)) roleNames.push('MINTER');
-  if (hasRole(roles, ROLE_BURNER)) roleNames.push('BURNER');
-  if (hasRole(roles, ROLE_PAUSER)) roleNames.push('PAUSER');
-  if (hasRole(roles, ROLE_BLACKLISTER)) roleNames.push('BLACKLISTER');
-  if (hasRole(roles, ROLE_SEIZER)) roleNames.push('SEIZER');
+  if (hasRole(roles, ROLE_MASTER)) roleNames.push("MASTER");
+  if (hasRole(roles, ROLE_MINTER)) roleNames.push("MINTER");
+  if (hasRole(roles, ROLE_BURNER)) roleNames.push("BURNER");
+  if (hasRole(roles, ROLE_PAUSER)) roleNames.push("PAUSER");
+  if (hasRole(roles, ROLE_BLACKLISTER)) roleNames.push("BLACKLISTER");
+  if (hasRole(roles, ROLE_SEIZER)) roleNames.push("SEIZER");
   return roleNames;
 }
 
@@ -265,12 +278,12 @@ export function decodeRoles(roles: number): string[] {
 export function encodeRoles(roleNames: string[]): number {
   let roles = 0;
   const roleMap: Record<string, number> = {
-    'MASTER': ROLE_MASTER,
-    'MINTER': ROLE_MINTER,
-    'BURNER': ROLE_BURNER,
-    'PAUSER': ROLE_PAUSER,
-    'BLACKLISTER': ROLE_BLACKLISTER,
-    'SEIZER': ROLE_SEIZER,
+    MASTER: ROLE_MASTER,
+    MINTER: ROLE_MINTER,
+    BURNER: ROLE_BURNER,
+    PAUSER: ROLE_PAUSER,
+    BLACKLISTER: ROLE_BLACKLISTER,
+    SEIZER: ROLE_SEIZER,
   };
   for (const name of roleNames) {
     const upper = name.toUpperCase();
@@ -297,10 +310,10 @@ export function hasFeature(features: number, feature: number): boolean {
  */
 export function decodeFeatures(features: number): string[] {
   const featureNames: string[] = [];
-  if (hasFeature(features, 1)) featureNames.push('TRANSFER_HOOK');
-  if (hasFeature(features, 2)) featureNames.push('PERMANENT_DELEGATE');
-  if (hasFeature(features, 4)) featureNames.push('MINT_CLOSE_AUTHORITY');
-  if (hasFeature(features, 8)) featureNames.push('DEFAULT_ACCOUNT_STATE');
+  if (hasFeature(features, 1)) featureNames.push("TRANSFER_HOOK");
+  if (hasFeature(features, 2)) featureNames.push("PERMANENT_DELEGATE");
+  if (hasFeature(features, 4)) featureNames.push("MINT_CLOSE_AUTHORITY");
+  if (hasFeature(features, 8)) featureNames.push("DEFAULT_ACCOUNT_STATE");
   return featureNames;
 }
 
@@ -326,20 +339,20 @@ export function calculateFee(
 ): FeeCalculation {
   // Check minimum amount
   if (amount.lt(minAmount)) {
-    throw new Error(`Amount ${amount.toString()} below minimum ${minAmount.toString()}`);
+    throw new Error(
+      `Amount ${amount.toString()} below minimum ${minAmount.toString()}`
+    );
   }
-  
+
   // Calculate fee
-  const fee = amount
-    .muln(feeBps)
-    .divn(10000);
-  
+  const fee = amount.muln(feeBps).divn(10000);
+
   // Apply cap
   const actualFee = fee.gt(maxFee) ? maxFee : fee;
-  
+
   // Calculate net amount
   const netAmount = amount.sub(actualFee);
-  
+
   return {
     fee: actualFee,
     netAmount,
@@ -350,11 +363,7 @@ export function calculateFee(
 /**
  * Check if mint amount would exceed quota
  */
-export function wouldExceedQuota(
-  current: BN,
-  quota: BN,
-  amount: BN
-): boolean {
+export function wouldExceedQuota(current: BN, quota: BN, amount: BN): boolean {
   return current.add(amount).gt(quota);
 }
 
@@ -381,10 +390,10 @@ export function wouldExceedCap(
 export function formatAmount(amount: BN, decimals: number): string {
   const divisor = new BN(10).pow(new BN(decimals));
   const whole = amount.div(divisor).toString();
-  const fraction = amount.mod(divisor).toString().padStart(decimals, '0');
-  
+  const fraction = amount.mod(divisor).toString().padStart(decimals, "0");
+
   // Trim trailing zeros
-  const trimmed = fraction.replace(/0+$/, '');
+  const trimmed = fraction.replace(/0+$/, "");
   return trimmed ? `${whole}.${trimmed}` : whole;
 }
 
@@ -393,9 +402,9 @@ export function formatAmount(amount: BN, decimals: number): string {
  * @example parseAmount("1.5", 6) // BN(1500000)
  */
 export function parseAmount(amount: string, decimals: number): BN {
-  const [whole, frac = ''] = amount.split('.');
-  const fraction = frac.padEnd(decimals, '0').slice(0, decimals);
-  const wholeBN = new BN(whole || '0');
+  const [whole, frac = ""] = amount.split(".");
+  const fraction = frac.padEnd(decimals, "0").slice(0, decimals);
+  const wholeBN = new BN(whole || "0");
   const fractionBN = new BN(fraction);
   const divisor = new BN(10).pow(new BN(decimals));
   return wholeBN.mul(divisor).add(fractionBN);
@@ -414,12 +423,12 @@ export function formatWithSymbol(
   const divisor = new BN(10).pow(new BN(decimals));
   const whole = amount.div(divisor);
   const fraction = amount.mod(divisor);
-  
+
   // Convert fraction to percentage with specified precision
   const precisionMultiplier = new BN(10).pow(new BN(decimals - precision));
   const fractionDisplay = fraction.div(precisionMultiplier).toNumber();
-  const fractionStr = fractionDisplay.toString().padStart(precision, '0');
-  
+  const fractionStr = fractionDisplay.toString().padStart(precision, "0");
+
   return `${whole}.${fractionStr} ${symbol}`;
 }
 
@@ -459,8 +468,9 @@ export async function getAccountOwner(
   try {
     const account = await connection.getParsedAccountInfo(tokenAccount);
     const data = account.value?.data as any;
-    return data?.parsed?.info?.owner ?
-      new PublicKey(data.parsed.info.owner) : null;
+    return data?.parsed?.info?.owner
+      ? new PublicKey(data.parsed.info.owner)
+      : null;
   } catch {
     return null;
   }
@@ -474,19 +484,21 @@ export async function getAccountOwner(
  * Extract error message from transaction result
  */
 export function extractError(error: any): string {
-  if (typeof error === 'string') return error;
+  if (typeof error === "string") return error;
   if (error?.message) return error.message;
   if (error?.toString) return error.toString();
-  return 'Unknown error';
+  return "Unknown error";
 }
 
 /**
  * Check if error is a specific Anchor error
  */
 export function isAnchorError(error: any, errorCode: number): boolean {
-  const errorStr = error?.toString() || '';
-  return errorStr.includes(`0x${errorCode.toString(16).padStart(4, '0')}`) ||
-         errorStr.includes(`custom program error: ${errorCode}`);
+  const errorStr = error?.toString() || "";
+  return (
+    errorStr.includes(`0x${errorCode.toString(16).padStart(4, "0")}`) ||
+    errorStr.includes(`custom program error: ${errorCode}`)
+  );
 }
 
 /**
@@ -494,8 +506,10 @@ export function isAnchorError(error: any, errorCode: number): boolean {
  */
 export function isInsufficientFunds(error: any): boolean {
   const errorStr = extractError(error).toLowerCase();
-  return errorStr.includes('insufficient funds') ||
-         errorStr.includes('insufficient lamports');
+  return (
+    errorStr.includes("insufficient funds") ||
+    errorStr.includes("insufficient lamports")
+  );
 }
 
 /**
@@ -503,8 +517,10 @@ export function isInsufficientFunds(error: any): boolean {
  */
 export function isSlippageError(error: any): boolean {
   const errorStr = extractError(error).toLowerCase();
-  return errorStr.includes('slippage') ||
-         errorStr.includes('exceeds desired slippage');
+  return (
+    errorStr.includes("slippage") ||
+    errorStr.includes("exceeds desired slippage")
+  );
 }
 
 // ============================================
@@ -515,7 +531,7 @@ export function isSlippageError(error: any): boolean {
  * Sleep for milliseconds
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -527,7 +543,7 @@ export async function withRetry<T>(
   delay: number = 1000
 ): Promise<T> {
   let lastError: any;
-  
+
   for (let i = 0; i < retries; i++) {
     try {
       return await fn();
@@ -538,7 +554,7 @@ export async function withRetry<T>(
       }
     }
   }
-  
+
   throw lastError;
 }
 
@@ -592,48 +608,48 @@ export default {
   getHookConfigPDA,
   getBlacklistPDA,
   getWhitelistPDA,
-  
+
   // Validation
   validateName,
   validateSymbol,
   validateDecimals,
   validateBatch,
-  
+
   // Roles
   hasRole,
   decodeRoles,
   encodeRoles,
-  
+
   // Features
   hasFeature,
   decodeFeatures,
   isSSS2,
-  
+
   // Calculations
   calculateFee,
   wouldExceedQuota,
   wouldExceedCap,
-  
+
   // Formatting
   formatAmount,
   parseAmount,
   formatWithSymbol,
-  
+
   // RPC
   getTokenBalance,
   accountExists,
   getAccountOwner,
-  
+
   // Errors
   extractError,
   isAnchorError,
   isInsufficientFunds,
   isSlippageError,
-  
+
   // Utils
   sleep,
   withRetry,
-  
+
   // Time
   formatTimestamp,
   now,

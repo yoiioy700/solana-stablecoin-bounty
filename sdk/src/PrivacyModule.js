@@ -46,7 +46,7 @@ class PrivacyModule {
         this.connection = connection;
         if (wallet) {
             this.provider = new anchor_1.AnchorProvider(connection, wallet, {
-                commitment: 'confirmed',
+                commitment: "confirmed",
             });
         }
     }
@@ -56,48 +56,64 @@ class PrivacyModule {
     }
     // Config PDA: ["confidentiality", "config", mint]
     getConfidentialityConfigPDA(stablecoin) {
-        return web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('confidentiality'), Buffer.from('config'), stablecoin.toBuffer()], types_1.SSS_TOKEN_PROGRAM_ID)[0];
+        return web3_js_1.PublicKey.findProgramAddressSync([
+            Buffer.from("confidentiality"),
+            Buffer.from("config"),
+            stablecoin.toBuffer(),
+        ], types_1.SSS_TOKEN_PROGRAM_ID)[0];
     }
     // ElGamal registry PDA: ["confidentiality", "elgamal", mint, owner]
     getElGamalRegistryPDA(stablecoin, owner) {
         return web3_js_1.PublicKey.findProgramAddressSync([
-            Buffer.from('confidentiality'),
-            Buffer.from('elgamal'),
+            Buffer.from("confidentiality"),
+            Buffer.from("elgamal"),
             stablecoin.toBuffer(),
-            owner.toBuffer()
+            owner.toBuffer(),
         ], types_1.SSS_TOKEN_PROGRAM_ID)[0];
     }
     // Confidential account PDA: ["confidentiality", "account", mint, owner]
     getConfidentialAccountPDA(stablecoin, owner) {
         return web3_js_1.PublicKey.findProgramAddressSync([
-            Buffer.from('confidentiality'),
-            Buffer.from('account'),
+            Buffer.from("confidentiality"),
+            Buffer.from("account"),
             stablecoin.toBuffer(),
-            owner.toBuffer()
+            owner.toBuffer(),
         ], types_1.SSS_TOKEN_PROGRAM_ID)[0];
     }
     // Range proof verifier PDA: ["confidentiality", "verifier", mint]
     getRangeProofVerifierPDA(stablecoin) {
-        return web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('confidentiality'), Buffer.from('verifier'), stablecoin.toBuffer()], types_1.SSS_TOKEN_PROGRAM_ID)[0];
+        return web3_js_1.PublicKey.findProgramAddressSync([
+            Buffer.from("confidentiality"),
+            Buffer.from("verifier"),
+            stablecoin.toBuffer(),
+        ], types_1.SSS_TOKEN_PROGRAM_ID)[0];
     }
     // Allowlist PDA: ["confidentiality", "allowlist", mint, address]
     getAllowlistPDA(stablecoin, address) {
         return web3_js_1.PublicKey.findProgramAddressSync([
-            Buffer.from('confidentiality'),
-            Buffer.from('allowlist'),
+            Buffer.from("confidentiality"),
+            Buffer.from("allowlist"),
             stablecoin.toBuffer(),
-            address.toBuffer()
+            address.toBuffer(),
         ], types_1.SSS_TOKEN_PROGRAM_ID)[0];
     }
     // Auditor PDA: ["confidentiality", "auditor", mint]
     getAuditorPDA(stablecoin) {
-        return web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('confidentiality'), Buffer.from('auditor'), stablecoin.toBuffer()], types_1.SSS_TOKEN_PROGRAM_ID)[0];
+        return web3_js_1.PublicKey.findProgramAddressSync([
+            Buffer.from("confidentiality"),
+            Buffer.from("auditor"),
+            stablecoin.toBuffer(),
+        ], types_1.SSS_TOKEN_PROGRAM_ID)[0];
     }
     // Enable confidential transfers for a stablecoin
     async enableConfidentialTransfers(params) {
         try {
-            const { stablecoin, authority, auditor = null, requireAllowlist = false, maxBalance = new anchor_1.BN(0) } = params;
-            const [masterRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()], types_1.SSS_TOKEN_PROGRAM_ID);
+            const { stablecoin, authority, auditor = null, requireAllowlist = false, maxBalance = new anchor_1.BN(0), } = params;
+            const [masterRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([
+                Buffer.from("role"),
+                authority.publicKey.toBuffer(),
+                stablecoin.toBuffer(),
+            ], types_1.SSS_TOKEN_PROGRAM_ID);
             const configPDA = this.getConfidentialityConfigPDA(stablecoin);
             const verifierPDA = this.getRangeProofVerifierPDA(stablecoin);
             const tx = await this.program.methods
@@ -156,7 +172,7 @@ class PrivacyModule {
             if (!tokenAccountInfo) {
                 // Create ATA - placeholder for actual implementation
                 // In production, use spl-token createAssociatedTokenAccountInstruction
-                console.log('Creating ATA for', mint.toBase58());
+                console.log("Creating ATA for", mint.toBase58());
             }
             const createConfidentialIx = await this.program.methods
                 .createConfidentialAccount(elGamalKey.publicKey)
@@ -177,7 +193,7 @@ class PrivacyModule {
             transaction.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
             transaction.sign(owner);
             const signature = await this.connection.sendRawTransaction(transaction.serialize());
-            await this.connection.confirmTransaction(signature, 'confirmed');
+            await this.connection.confirmTransaction(signature, "confirmed");
             return {
                 success: true,
                 signature,
@@ -200,8 +216,8 @@ class PrivacyModule {
         try {
             // Mock fetch - in production use actual program.account.confidentialAccount.fetch
             const mockAccount = {
-                owner: new web3_js_1.PublicKey('11111111111111111111111111111111'),
-                mint: new web3_js_1.PublicKey('11111111111111111111111111111111'),
+                owner: new web3_js_1.PublicKey("11111111111111111111111111111111"),
+                mint: new web3_js_1.PublicKey("11111111111111111111111111111111"),
                 pendingBalance: Buffer.alloc(32),
                 availableBalance: Buffer.alloc(32),
                 allowTimestamps: new anchor_1.BN(0),
@@ -222,11 +238,11 @@ class PrivacyModule {
     // Perform confidential transfer with ZK proof
     async confidentialTransfer(params) {
         try {
-            const { source, destination, mint, amount, authority, proofData, auditorDecryptionKey } = params;
+            const { source, destination, mint, amount, authority, proofData, auditorDecryptionKey, } = params;
             const configPDA = this.getConfidentialityConfigPDA(mint);
             const sourceRegistry = this.getElGamalRegistryPDA(mint, authority.publicKey);
             // Mock fetch - in production use actual program.account.confidentialAccount.fetch
-            const destOwner = new web3_js_1.PublicKey('11111111111111111111111111111111');
+            const destOwner = new web3_js_1.PublicKey("11111111111111111111111111111111");
             const destRegistry = this.getElGamalRegistryPDA(mint, destOwner);
             const verifierPDA = this.getRangeProofVerifierPDA(mint);
             let rangeProof;
@@ -258,7 +274,7 @@ class PrivacyModule {
             transaction.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
             transaction.sign(authority);
             const signature = await this.connection.sendRawTransaction(transaction.serialize());
-            await this.connection.confirmTransaction(signature, 'confirmed');
+            await this.connection.confirmTransaction(signature, "confirmed");
             return {
                 success: true,
                 signature,
@@ -305,7 +321,7 @@ class PrivacyModule {
     // Withdraw tokens from confidential account
     async withdrawFromConfidential(params) {
         try {
-            const { confidentialAccount, tokenAccount, mint, amount, authority, decryptionKey } = params;
+            const { confidentialAccount, tokenAccount, mint, amount, authority, decryptionKey, } = params;
             const configPDA = this.getConfidentialityConfigPDA(mint);
             const verifierPDA = this.getRangeProofVerifierPDA(mint);
             const tx = await this.program.methods
@@ -336,8 +352,12 @@ class PrivacyModule {
     // Add address to allowlist
     async addToAllowlist(params) {
         try {
-            const { stablecoin, address, authority, reason = '', expiry = new anchor_1.BN(0) } = params;
-            const [authorityRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()], types_1.SSS_TOKEN_PROGRAM_ID);
+            const { stablecoin, address, authority, reason = "", expiry = new anchor_1.BN(0), } = params;
+            const [authorityRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([
+                Buffer.from("role"),
+                authority.publicKey.toBuffer(),
+                stablecoin.toBuffer(),
+            ], types_1.SSS_TOKEN_PROGRAM_ID);
             const configPDA = this.getConfidentialityConfigPDA(stablecoin);
             const allowlistPDA = this.getAllowlistPDA(stablecoin, address);
             const tx = await this.program.methods
@@ -373,7 +393,11 @@ class PrivacyModule {
     async removeFromAllowlist(params) {
         try {
             const { stablecoin, address, authority } = params;
-            const [authorityRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()], types_1.SSS_TOKEN_PROGRAM_ID);
+            const [authorityRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([
+                Buffer.from("role"),
+                authority.publicKey.toBuffer(),
+                stablecoin.toBuffer(),
+            ], types_1.SSS_TOKEN_PROGRAM_ID);
             const allowlistPDA = this.getAllowlistPDA(stablecoin, address);
             const tx = await this.program.methods
                 .removeFromAllowlist()
@@ -407,7 +431,7 @@ class PrivacyModule {
                 const entry = {
                     address: address,
                     stablecoin: stablecoin,
-                    reason: 'Verified',
+                    reason: "Verified",
                     isActive: true,
                     createdAt: Date.now(),
                     expiry: new anchor_1.BN(0),
@@ -449,8 +473,9 @@ class PrivacyModule {
             const filtered = entries
                 .filter((e) => e.account?.isActive)
                 .map((e) => ({
-                address: e.account?.address || new web3_js_1.PublicKey('11111111111111111111111111111111'),
-                reason: e.account?.reason || '',
+                address: e.account?.address ||
+                    new web3_js_1.PublicKey("11111111111111111111111111111111"),
+                reason: e.account?.reason || "",
                 expiry: e.account?.expiry?.toNumber() || undefined,
             }));
             return {
@@ -469,7 +494,11 @@ class PrivacyModule {
     async setAuditor(params) {
         try {
             const { stablecoin, auditor, auditorPubkey, authority } = params;
-            const [authorityRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()], types_1.SSS_TOKEN_PROGRAM_ID);
+            const [authorityRolePDA] = web3_js_1.PublicKey.findProgramAddressSync([
+                Buffer.from("role"),
+                authority.publicKey.toBuffer(),
+                stablecoin.toBuffer(),
+            ], types_1.SSS_TOKEN_PROGRAM_ID);
             const auditorPDA = this.getAuditorPDA(stablecoin);
             const configPDA = this.getConfidentialityConfigPDA(stablecoin);
             const tx = await this.program.methods

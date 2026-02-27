@@ -1,14 +1,14 @@
-import 'reflect-metadata';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { logger } from '../shared/logger';
-import { db, initializeDatabase } from './database';
-import cron from 'node-cron';
+import "reflect-metadata";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { logger } from "../shared/logger";
+import { db, initializeDatabase } from "./database";
+import cron from "node-cron";
 
 const PROGRAM_ID = new PublicKey(
-  process.env.SSS2_PROGRAM_ID || '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
+  process.env.SSS2_PROGRAM_ID || "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
 );
 
-const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || '5000');
+const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || "5000");
 
 interface Event {
   signature: string;
@@ -26,15 +26,15 @@ class EventIndexer {
 
   constructor() {
     this.connection = new Connection(
-      process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-      'confirmed'
+      process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com",
+      "confirmed"
     );
     this.currentSlot = 0;
     this.lastProcessedSignature = null;
   }
 
   async start(): Promise<void> {
-    logger.info('Starting SSS Event Indexer...');
+    logger.info("Starting SSS Event Indexer...");
     logger.info(`Monitoring program: ${PROGRAM_ID.toString()}`);
 
     // Initialize database
@@ -49,7 +49,7 @@ class EventIndexer {
     this.pollEvents();
 
     // Also run cron job for backfill
-    cron.schedule('*/5 * * * *', () => {
+    cron.schedule("*/5 * * * *", () => {
       this.backfillEvents();
     });
   }
@@ -59,7 +59,7 @@ class EventIndexer {
       const signatures = await this.connection.getSignaturesForAddress(
         PROGRAM_ID,
         { limit: 10 },
-        'confirmed'
+        "confirmed"
       );
 
       for (const sigInfo of signatures) {
@@ -74,7 +74,7 @@ class EventIndexer {
         this.lastProcessedSignature = signatures[0].signature;
       }
     } catch (error) {
-      logger.error('Polling error:', error);
+      logger.error("Polling error:", error);
     }
 
     setTimeout(() => this.pollEvents(), POLLING_INTERVAL);
@@ -83,7 +83,7 @@ class EventIndexer {
   async processTransaction(signature: string): Promise<void> {
     try {
       const tx = await this.connection.getParsedTransaction(signature, {
-        commitment: 'confirmed',
+        commitment: "confirmed",
         maxSupportedTransactionVersion: 0,
       });
 
@@ -95,46 +95,46 @@ class EventIndexer {
       // Process logs
       if (tx.meta.logMessages) {
         for (const log of tx.meta.logMessages) {
-          if (log.includes('Transfer hook executed')) {
+          if (log.includes("Transfer hook executed")) {
             await this.handleTransferEvent({
               signature,
               slot,
-              blockTime,
+              blockTime: blockTime || null,
               programId: PROGRAM_ID.toString(),
-              instruction: 'execute_transfer_hook',
+              instruction: "execute_transfer_hook",
               data: this.parseTransferLog(log),
             });
           }
 
-          if (log.includes('Fee config updated')) {
+          if (log.includes("Fee config updated")) {
             await this.handleFeeUpdateEvent({
               signature,
               slot,
-              blockTime,
+              blockTime: blockTime || null,
               programId: PROGRAM_ID.toString(),
-              instruction: 'update_fee_config',
+              instruction: "update_fee_config",
               data: {},
             });
           }
 
-          if (log.includes('Added to BLACKLIST')) {
+          if (log.includes("Added to BLACKLIST")) {
             await this.handleBlacklistAdd({
               signature,
               slot,
-              blockTime,
+              blockTime: blockTime || null,
               programId: PROGRAM_ID.toString(),
-              instruction: 'add_blacklist',
+              instruction: "add_blacklist",
               data: this.parseAddressLog(log),
             });
           }
 
-          if (log.includes('Added to whitelist')) {
+          if (log.includes("Added to whitelist")) {
             await this.handleWhitelistAdd({
               signature,
               slot,
-              blockTime,
+              blockTime: blockTime || null,
               programId: PROGRAM_ID.toString(),
-              instruction: 'add_whitelist',
+              instruction: "add_whitelist",
               data: this.parseAddressLog(log),
             });
           }
@@ -149,7 +149,9 @@ class EventIndexer {
 
   private parseTransferLog(log: string): any {
     // Parse log for transfer details
-    const match = log.match(/Source:\s*(\S+)\.\s*Destination:\s*(\S+)\.\s*Amount:\s*(\d+)/i);
+    const match = log.match(
+      /Source:\s*(\S+)\.\s*Destination:\s*(\S+)\.\s*Amount:\s*(\d+)/i
+    );
     if (match) {
       return {
         source: match[1],
@@ -169,13 +171,23 @@ class EventIndexer {
   }
 
   private async handleTransferEvent(event: Event): Promise<void> {
-    logger.info(`Transfer event: ${event.data.source} -> ${event.data.destination}`);
+    logger.info(
+      `Transfer event: ${event.data.source} -> ${event.data.destination}`
+    );
     // Save to database
     await db.query(
       `INSERT INTO transfers (signature, slot, block_time, source, destination, amount, program_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (signature) DO NOTHING`,
-      [event.signature, event.slot, event.blockTime, event.data.source, event.data.destination, event.data.amount, event.programId]
+      [
+        event.signature,
+        event.slot,
+        event.blockTime || null,
+        event.data.source,
+        event.data.destination,
+        event.data.amount,
+        event.programId,
+      ]
     );
   }
 
@@ -185,7 +197,13 @@ class EventIndexer {
       `INSERT INTO fee_updates (signature, slot, block_time, program_id, data)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (signature) DO NOTHING`,
-      [event.signature, event.slot, event.blockTime, event.programId, JSON.stringify(event.data)]
+      [
+        event.signature,
+        event.slot,
+        event.blockTime || null,
+        event.programId,
+        JSON.stringify(event.data),
+      ]
     );
   }
 
@@ -195,7 +213,13 @@ class EventIndexer {
       `INSERT INTO blacklist_events (signature, slot, block_time, address, action, program_id)
        VALUES ($1, $2, $3, $4, 'add', $5)
        ON CONFLICT (signature) DO NOTHING`,
-      [event.signature, event.slot, event.blockTime, event.data.address, event.programId]
+      [
+        event.signature,
+        event.slot,
+        event.blockTime,
+        event.data.address,
+        event.programId,
+      ]
     );
   }
 
@@ -205,12 +229,18 @@ class EventIndexer {
       `INSERT INTO whitelist_events (signature, slot, block_time, address, action, program_id)
        VALUES ($1, $2, $3, $4, 'add', $5)
        ON CONFLICT (signature) DO NOTHING`,
-      [event.signature, event.slot, event.blockTime, event.data.address, event.programId]
+      [
+        event.signature,
+        event.slot,
+        event.blockTime || null,
+        event.data.address,
+        event.programId,
+      ]
     );
   }
 
   async backfillEvents(): Promise<void> {
-    logger.info('Running backfill...');
+    logger.info("Running backfill...");
     // Implement backfill logic here
   }
 }
@@ -218,7 +248,7 @@ class EventIndexer {
 // Start indexer
 const indexer = new EventIndexer();
 indexer.start().catch((error) => {
-  logger.error('Indexer failed to start:', error);
+  logger.error("Indexer failed to start:", error);
   process.exit(1);
 });
 

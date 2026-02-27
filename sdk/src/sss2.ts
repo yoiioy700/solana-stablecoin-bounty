@@ -7,13 +7,13 @@ import {
   TransactionInstruction,
   SystemProgram,
   SendOptions,
-} from '@solana/web3.js';
-import { BN, AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
-import type { SSS2HookConfig, SDKResult, FeeCalculation } from './types';
+} from "@solana/web3.js";
+import { BN, AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
+import type { SSS2HookConfig, SDKResult, FeeCalculation } from "./types";
 
 // SSS-2 Program ID (Devnet)
 export const SSS2_PROGRAM_ID = new PublicKey(
-  '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
+  "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
 );
 
 // Instruction discriminators (Anchor: sha256("global:instruction_name")[:8])
@@ -40,7 +40,11 @@ export class SSS2Hook {
   private payer: Keypair;
   private programId: PublicKey;
 
-  constructor(connection: Connection, payer: Keypair, programId = SSS2_PROGRAM_ID) {
+  constructor(
+    connection: Connection,
+    payer: Keypair,
+    programId = SSS2_PROGRAM_ID
+  ) {
     this.connection = connection;
     this.payer = payer;
     this.programId = programId;
@@ -51,7 +55,7 @@ export class SSS2Hook {
    */
   getConfigPDA(): PublicKey {
     const [pda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('config'), this.payer.publicKey.toBuffer()],
+      [Buffer.from("config"), this.payer.publicKey.toBuffer()],
       this.programId
     );
     return pda;
@@ -62,7 +66,11 @@ export class SSS2Hook {
    */
   getWhitelistPDA(address: PublicKey): PublicKey {
     const [pda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), this.payer.publicKey.toBuffer(), address.toBuffer()],
+      [
+        Buffer.from("whitelist"),
+        this.payer.publicKey.toBuffer(),
+        address.toBuffer(),
+      ],
       this.programId
     );
     return pda;
@@ -73,7 +81,11 @@ export class SSS2Hook {
    */
   getBlacklistPDA(address: PublicKey): PublicKey {
     const [pda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('blacklist'), this.payer.publicKey.toBuffer(), address.toBuffer()],
+      [
+        Buffer.from("blacklist"),
+        this.payer.publicKey.toBuffer(),
+        address.toBuffer(),
+      ],
       this.programId
     );
     return pda;
@@ -85,14 +97,14 @@ export class SSS2Hook {
   async initialize(config: SSS2HookConfig): Promise<SDKResult> {
     try {
       const configPDA = this.getConfigPDA();
-      
+
       // Args: fee_bps (u16) + max_fee (u64)
       const feeBps = Buffer.alloc(2);
       feeBps.writeUInt16LE(config.transferFeeBasisPoints, 0);
-      
+
       const maxFee = Buffer.alloc(8);
       maxFee.writeBigUInt64LE(BigInt(config.maxTransferFee.toString()), 0);
-      
+
       const data = Buffer.concat([
         Buffer.from(IX_DISCRIMINATORS.initialize),
         feeBps,
@@ -103,7 +115,11 @@ export class SSS2Hook {
         keys: [
           { pubkey: configPDA, isSigner: false, isWritable: true },
           { pubkey: this.payer.publicKey, isSigner: true, isWritable: true },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          {
+            pubkey: SystemProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
         ],
         programId: this.programId,
         data,
@@ -113,11 +129,14 @@ export class SSS2Hook {
       return { success: true, signature: sig, data: { configPDA } };
     } catch (error: any) {
       // If already initialized, it's ok
-      if (error.toString().includes('already in use') || error.toString().includes('custom program error: 0x0')) {
-        return { 
-          success: true, 
-          signature: undefined, 
-          data: { configPDA: this.getConfigPDA() } 
+      if (
+        error.toString().includes("already in use") ||
+        error.toString().includes("custom program error: 0x0")
+      ) {
+        return {
+          success: true,
+          signature: undefined,
+          data: { configPDA: this.getConfigPDA() },
         };
       }
       return { success: false, error: error.message };
@@ -134,15 +153,18 @@ export class SSS2Hook {
   }): Promise<SDKResult> {
     try {
       const configPDA = this.getConfigPDA();
-      
+
       const feeBps = Buffer.alloc(2);
       feeBps.writeUInt16LE(config.transferFeeBasisPoints, 0);
-      
+
       const maxFee = Buffer.alloc(8);
       maxFee.writeBigUInt64LE(BigInt(config.maxTransferFee.toString()), 0);
-      
+
       const minTransfer = Buffer.alloc(8);
-      minTransfer.writeBigUInt64LE(BigInt(config.minTransferAmount.toString()), 0);
+      minTransfer.writeBigUInt64LE(
+        BigInt(config.minTransferAmount.toString()),
+        0
+      );
 
       const data = Buffer.concat([
         Buffer.from(IX_DISCRIMINATORS.update_fee_config),
@@ -185,7 +207,11 @@ export class SSS2Hook {
           { pubkey: configPDA, isSigner: false, isWritable: false },
           { pubkey: whitelistPDA, isSigner: false, isWritable: true },
           { pubkey: this.payer.publicKey, isSigner: true, isWritable: true },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          {
+            pubkey: SystemProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
         ],
         programId: this.programId,
         data,
@@ -216,7 +242,11 @@ export class SSS2Hook {
           { pubkey: configPDA, isSigner: false, isWritable: false },
           { pubkey: whitelistPDA, isSigner: false, isWritable: true },
           { pubkey: this.payer.publicKey, isSigner: true, isWritable: true },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          {
+            pubkey: SystemProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
         ],
         programId: this.programId,
         data,
@@ -247,7 +277,11 @@ export class SSS2Hook {
           { pubkey: configPDA, isSigner: false, isWritable: false },
           { pubkey: blacklistPDA, isSigner: false, isWritable: true },
           { pubkey: this.payer.publicKey, isSigner: true, isWritable: true },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          {
+            pubkey: SystemProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
         ],
         programId: this.programId,
         data,
@@ -278,7 +312,11 @@ export class SSS2Hook {
           { pubkey: configPDA, isSigner: false, isWritable: false },
           { pubkey: blacklistPDA, isSigner: false, isWritable: true },
           { pubkey: this.payer.publicKey, isSigner: true, isWritable: true },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          {
+            pubkey: SystemProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
         ],
         programId: this.programId,
         data,
@@ -301,7 +339,7 @@ export class SSS2Hook {
       // Option<Pubkey>: 1 byte (0=none, 1=some) + 32 bytes pubkey
       const hasDelegate = delegate ? 1 : 0;
       const delegateBytes = delegate ? delegate.toBuffer() : Buffer.alloc(32);
-      
+
       const delegateFlag = Buffer.alloc(1);
       delegateFlag.writeUInt8(hasDelegate, 0);
 
@@ -426,17 +464,17 @@ export class SSS2Hook {
     const tx = new Transaction().add(...instructions);
     tx.feePayer = this.payer.publicKey;
     tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
-    
+
     tx.sign(this.payer);
-    
+
     const rawTx = tx.serialize();
     const sig = await this.connection.sendRawTransaction(rawTx, {
       skipPreflight: false,
-      preflightCommitment: 'confirmed',
+      preflightCommitment: "confirmed",
       ...options,
     });
 
-    await this.connection.confirmTransaction(sig, 'confirmed');
+    await this.connection.confirmTransaction(sig, "confirmed");
     return sig;
   }
 }

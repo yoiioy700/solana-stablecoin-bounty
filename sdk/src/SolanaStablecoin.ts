@@ -1,5 +1,5 @@
-import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
-import { BN, Program, AnchorProvider, web3 } from '@coral-xyz/anchor';
+import { Connection, PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import { BN, Program, AnchorProvider, web3 } from "@coral-xyz/anchor";
 import {
   SSS_TOKEN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
@@ -11,22 +11,54 @@ import {
   ROLE_MINTER,
   ROLE_BURNER,
   ROLE_PAUSER,
-} from './types';
-import { SssToken } from './types/idl/sss_token';
-import { SssTransferHook } from './types/idl/sss_transfer_hook';
-import { ExtensionType, getMintLen, createInitializeMintInstruction, createInitializeConfidentialTransferMintInstruction, createInitializeTransferHookInstruction, createInitializePermanentDelegateInstruction, createInitializeMintCloseAuthorityInstruction, createInitializeDefaultAccountStateInstruction } from '@solana/spl-token';
-import * as anchor from '@coral-xyz/anchor';
+} from "./types";
+import { SssToken } from "./types/idl/sss_token";
+import { SssTransferHook } from "./types/idl/sss_transfer_hook";
+import {
+  ExtensionType,
+  getMintLen,
+  createInitializeMintInstruction,
+  createInitializeTransferHookInstruction,
+  createInitializePermanentDelegateInstruction,
+  createInitializeMintCloseAuthorityInstruction,
+  createInitializeDefaultAccountStateInstruction,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
+import * as anchor from "@coral-xyz/anchor";
 
-// Token-2022 program ID
-const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
+// Token-2022 confidential transfer feature is still new in spl-token, manually build the init ix
+const createInitializeConfidentialTransferMintInstruction = (
+  mint: PublicKey,
+  authority: PublicKey,
+  autoApproveNewAccounts: PublicKey,
+  programId: PublicKey
+) => {
+  // Instruction layout for InitializeConfidentialTransferMint
+  // 0 : Instruction offset
+  // 1 : 
+  // [Pubkey]
+  // [Pubkey]
+  const data = Buffer.alloc(1 + 32 + 32);
+  data.writeUInt8(27, 0); // InitializeConfidentialTransferMint = 27
+  authority.toBuffer().copy(data, 1);
+  autoApproveNewAccounts.toBuffer().copy(data, 33);
+
+  return new TransactionInstruction({
+    keys: [{ pubkey: mint, isSigner: false, isWritable: true }],
+    programId,
+    data,
+  });
+};
+
+import { TransactionInstruction } from "@solana/web3.js";
 
 /**
  * Core SDK for managing SSS-1 and SSS-2 stablecoins
- * 
+ *
  * Usage:
  * ```typescript
  * const sdk = new SolanaStablecoin(connection, wallet);
- * 
+ *
  * // Initialize SSS-1
  * const { mint, stablecoin } = await sdk.initialize({
  *   name: 'My USD',
@@ -34,7 +66,7 @@ const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqC
  *   decimals: 6,
  *   authority: keypair,
  * });
- * 
+ *
  * // Mint tokens
  * await sdk.mint({
  *   stablecoin,
@@ -58,22 +90,19 @@ export class SolanaStablecoin {
   ) {
     this.connection = connection;
     this.provider = new AnchorProvider(connection, wallet, {
-      commitment: 'confirmed',
+      commitment: "confirmed",
     });
 
     // Initialize programs with IDs
     const tokenProgramId = programId || SSS_TOKEN_PROGRAM_ID;
     const transferHookId = hookProgramId || SSS_TRANSFER_HOOK_PROGRAM_ID;
 
-    // Load IDL from target directory
     this.program = new Program(
-      require('../target/idl/sss_token.json'),
-      tokenProgramId,
+      require("../target/idl/sss_token.json"),
       this.provider
     ) as unknown as Program<SssToken>;
     this.hookProgram = new Program(
-      require('../target/idl/sss_transfer_hook.json'),
-      transferHookId,
+      require("../target/idl/sss_transfer_hook.json"),
       this.provider
     ) as unknown as Program<SssTransferHook>;
   }
@@ -83,7 +112,7 @@ export class SolanaStablecoin {
    */
   getStablecoinPDA(mint: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('stablecoin'), mint.toBuffer()],
+      [Buffer.from("stablecoin"), mint.toBuffer()],
       this.program.programId
     )[0];
   }
@@ -93,7 +122,7 @@ export class SolanaStablecoin {
    */
   getRolePDA(owner: PublicKey, mint: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('role'), owner.toBuffer(), mint.toBuffer()],
+      [Buffer.from("role"), owner.toBuffer(), mint.toBuffer()],
       this.program.programId
     )[0];
   }
@@ -103,7 +132,7 @@ export class SolanaStablecoin {
    */
   getMinterPDA(minter: PublicKey, mint: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('minter'), minter.toBuffer(), mint.toBuffer()],
+      [Buffer.from("minter"), minter.toBuffer(), mint.toBuffer()],
       this.program.programId
     )[0];
   }
@@ -113,7 +142,7 @@ export class SolanaStablecoin {
    */
   getMintAuthorityPDA(stablecoinPDA: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('mint_authority'), stablecoinPDA.toBuffer()],
+      [Buffer.from("mint_authority"), stablecoinPDA.toBuffer()],
       this.program.programId
     )[0];
   }
@@ -123,7 +152,7 @@ export class SolanaStablecoin {
    */
   getBurnAuthorityPDA(stablecoinPDA: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('burn_authority'), stablecoinPDA.toBuffer()],
+      [Buffer.from("burn_authority"), stablecoinPDA.toBuffer()],
       this.program.programId
     )[0];
   }
@@ -133,7 +162,7 @@ export class SolanaStablecoin {
    */
   getFreezeAuthorityPDA(stablecoinPDA: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('freeze_authority'), stablecoinPDA.toBuffer()],
+      [Buffer.from("freeze_authority"), stablecoinPDA.toBuffer()],
       this.program.programId
     )[0];
   }
@@ -151,45 +180,61 @@ export class SolanaStablecoin {
     enableConfidentialTransfers?: boolean;
     enableMintCloseAuthority?: boolean;
     enableDefaultAccountState?: boolean;
-  }): Promise<SDKResult<{ mint: PublicKey; stablecoin: PublicKey; signature: string }>> {
+  }): Promise<
+    SDKResult<{ mint: PublicKey; stablecoin: PublicKey; signature: string }>
+  > {
     try {
-      const { 
-        name, symbol, decimals, authority, 
-        enableTransferHook = false, 
+      const {
+        name,
+        symbol,
+        decimals,
+        authority,
+        enableTransferHook = false,
         enablePermanentDelegate = false,
         enableConfidentialTransfers = false,
         enableMintCloseAuthority = false,
-        enableDefaultAccountState = false
+        enableDefaultAccountState = false,
       } = params;
 
-      if (name.length > 32) throw new Error('Name must be 32 characters or less');
-      if (symbol.length > 10) throw new Error('Symbol must be 10 characters or less');
-      if (decimals > 9) throw new Error('Decimals must be 9 or less');
+      if (name.length > 32)
+        throw new Error("Name must be 32 characters or less");
+      if (symbol.length > 10)
+        throw new Error("Symbol must be 10 characters or less");
+      if (decimals > 9) throw new Error("Decimals must be 9 or less");
 
       const mintKeypair = Keypair.generate();
       const stablecoin = this.getStablecoinPDA(mintKeypair.publicKey);
-      const masterRole = this.getRolePDA(authority.publicKey, mintKeypair.publicKey);
-      
+      const masterRole = this.getRolePDA(
+        authority.publicKey,
+        mintKeypair.publicKey
+      );
+
       const extensions: ExtensionType[] = [];
-      if (enableConfidentialTransfers) extensions.push(ExtensionType.ConfidentialTransferMint);
+      if (enableConfidentialTransfers)
+        extensions.push(ExtensionType.ConfidentialTransferMint);
       if (enableTransferHook) extensions.push(ExtensionType.TransferHook);
-      if (enablePermanentDelegate) extensions.push(ExtensionType.PermanentDelegate);
-      if (enableMintCloseAuthority) extensions.push(ExtensionType.MintCloseAuthority);
-      if (enableDefaultAccountState) extensions.push(ExtensionType.DefaultAccountState);
-      
+      if (enablePermanentDelegate)
+        extensions.push(ExtensionType.PermanentDelegate);
+      if (enableMintCloseAuthority)
+        extensions.push(ExtensionType.MintCloseAuthority);
+      if (enableDefaultAccountState)
+        extensions.push(ExtensionType.DefaultAccountState);
+
       const mintLen = getMintLen(extensions);
-      const lamports = await this.connection.getMinimumBalanceForRentExemption(mintLen);
-      
+      const lamports = await this.connection.getMinimumBalanceForRentExemption(
+        mintLen
+      );
+
       // SSS-2 Config PDA is the transfer hook program ID
       const [configPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from('config'), authority.publicKey.toBuffer()],
+        [Buffer.from("config"), authority.publicKey.toBuffer()],
         this.hookProgram.programId
       );
-      
+
       const mintAuthorityPDA = this.getMintAuthorityPDA(stablecoin);
-      
+
       const tx = new Transaction();
-      
+
       tx.add(
         web3.SystemProgram.createAccount({
           fromPubkey: authority.publicKey,
@@ -199,7 +244,7 @@ export class SolanaStablecoin {
           programId: TOKEN_2022_PROGRAM_ID,
         })
       );
-      
+
       if (enableConfidentialTransfers) {
         tx.add(
           createInitializeConfidentialTransferMintInstruction(
@@ -210,7 +255,7 @@ export class SolanaStablecoin {
           )
         );
       }
-      
+
       if (enableTransferHook) {
         tx.add(
           createInitializeTransferHookInstruction(
@@ -221,7 +266,7 @@ export class SolanaStablecoin {
           )
         );
       }
-      
+
       if (enablePermanentDelegate) {
         tx.add(
           createInitializePermanentDelegateInstruction(
@@ -231,7 +276,7 @@ export class SolanaStablecoin {
           )
         );
       }
-      
+
       if (enableMintCloseAuthority) {
         tx.add(
           createInitializeMintCloseAuthorityInstruction(
@@ -241,7 +286,7 @@ export class SolanaStablecoin {
           )
         );
       }
-      
+
       if (enableDefaultAccountState) {
         // 1 = Frozen, 0 = Initialized. SSS-3 typically requires accounts to be initialized frozen
         tx.add(
@@ -264,8 +309,15 @@ export class SolanaStablecoin {
       );
 
       // Now call the anchor program to initialize state
+      // @ts-ignore
       const initIx = await this.program.methods
-        .initialize(name, symbol, decimals, enableTransferHook, enablePermanentDelegate)
+        .initialize(
+          name,
+          symbol,
+          decimals,
+          enableTransferHook,
+          enablePermanentDelegate
+        )
         .accounts({
           authority: authority.publicKey,
           stablecoinState: stablecoin,
@@ -276,15 +328,19 @@ export class SolanaStablecoin {
           rent: web3.SYSVAR_RENT_PUBKEY,
         })
         .instruction();
-        
+
       tx.add(initIx);
 
       tx.feePayer = authority.publicKey;
-      tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+      tx.recentBlockhash = (
+        await this.connection.getLatestBlockhash()
+      ).blockhash;
       tx.sign(authority, mintKeypair);
 
-      const signature = await this.connection.sendRawTransaction(tx.serialize());
-      await this.connection.confirmTransaction(signature, 'confirmed');
+      const signature = await this.connection.sendRawTransaction(
+        tx.serialize()
+      );
+      await this.connection.confirmTransaction(signature, "confirmed");
 
       return {
         success: true,
@@ -369,7 +425,10 @@ export class SolanaStablecoin {
       const { stablecoin, burner, tokenAccount, amount } = params;
 
       // Fetch state
-      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      // @ts-ignore
+      const state = await this.program.account.stablecoinState.fetch(
+        stablecoin
+      );
       const mint = state.mint;
 
       // Derive accounts
@@ -414,7 +473,10 @@ export class SolanaStablecoin {
     try {
       const { stablecoin, pauser, tokenAccount } = params;
 
-      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      // @ts-ignore
+      const state = await this.program.account.stablecoinState.fetch(
+        stablecoin
+      );
       const mint = state.mint;
 
       const pauserRole = this.getRolePDA(pauser.publicKey, mint);
@@ -457,7 +519,10 @@ export class SolanaStablecoin {
     try {
       const { stablecoin, pauser, tokenAccount } = params;
 
-      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      // @ts-ignore
+      const state = await this.program.account.stablecoinState.fetch(
+        stablecoin
+      );
       const mint = state.mint;
 
       const pauserRole = this.getRolePDA(pauser.publicKey, mint);
@@ -499,7 +564,10 @@ export class SolanaStablecoin {
     try {
       const { stablecoin, pauser } = params;
 
-      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      // @ts-ignore
+      const state = await this.program.account.stablecoinState.fetch(
+        stablecoin
+      );
       const mint = state.mint;
 
       const pauserRole = this.getRolePDA(pauser.publicKey, mint);
@@ -536,7 +604,10 @@ export class SolanaStablecoin {
     try {
       const { stablecoin, pauser } = params;
 
-      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      // @ts-ignore
+      const state = await this.program.account.stablecoinState.fetch(
+        stablecoin
+      );
       const mint = state.mint;
 
       const pauserRole = this.getRolePDA(pauser.publicKey, mint);
@@ -575,7 +646,10 @@ export class SolanaStablecoin {
     try {
       const { stablecoin, authority, target, roles } = params;
 
-      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      // @ts-ignore
+      const state = await this.program.account.stablecoinState.fetch(
+        stablecoin
+      );
       const mint = state.mint;
 
       const authorityRole = this.getRolePDA(authority.publicKey, mint);
@@ -611,7 +685,10 @@ export class SolanaStablecoin {
    */
   async getState(stablecoin: PublicKey): Promise<SDKResult<StablecoinState>> {
     try {
-      const state = await this.program.account.stablecoinState.fetch(stablecoin);
+      // @ts-ignore
+      const state = await this.program.account.stablecoinState.fetch(
+        stablecoin
+      );
 
       return {
         success: true,
@@ -630,6 +707,7 @@ export class SolanaStablecoin {
    */
   async getRole(rolePDA: PublicKey): Promise<SDKResult<RoleAccount>> {
     try {
+      // @ts-ignore
       const role = await this.program.account.roleAccount.fetch(rolePDA);
 
       return {
@@ -652,13 +730,15 @@ export class SolanaStablecoin {
     mint: PublicKey,
     recipients: PublicKey[],
     amounts: BN[]
-  ): Promise<SDKResult<{ signature: string; recipients: number; totalAmount: string }>> {
+  ): Promise<
+    SDKResult<{ signature: string; recipients: number; totalAmount: string }>
+  > {
     try {
       if (recipients.length !== amounts.length) {
-        throw new Error('Recipients and amounts length mismatch');
+        throw new Error("Recipients and amounts length mismatch");
       }
       if (recipients.length > 10) {
-        throw new Error('Maximum 10 recipients per batch');
+        throw new Error("Maximum 10 recipients per batch");
       }
 
       const stablecoin = this.getStablecoinPDA(mint);
@@ -705,22 +785,22 @@ export class SolanaStablecoin {
   getFeatures(): { sss1: string[]; sss2: string[] } {
     return {
       sss1: [
-        'Token-2022 support',
-        'RBAC roles (Master/Minter/Burner/Pauser)',
-        'Mint/Burn with quotas',
-        'Freeze/Thaw accounts',
-        'Pause/Unpause contract',
-        'Minter epoch limits',
-        'Supply cap',
-        'Batch operations',
+        "Token-2022 support",
+        "RBAC roles (Master/Minter/Burner/Pauser)",
+        "Mint/Burn with quotas",
+        "Freeze/Thaw accounts",
+        "Pause/Unpause contract",
+        "Minter epoch limits",
+        "Supply cap",
+        "Batch operations",
       ],
       sss2: [
-        'Transfer hook enforcement',
-        'Blacklist/Whitelist',
-        'Configurable transfer fees',
-        'Token seizure (permanent delegate)',
-        'Compliance roles (Blacklister, Seizer)',
-        'Multisig support',
+        "Transfer hook enforcement",
+        "Blacklist/Whitelist",
+        "Configurable transfer fees",
+        "Token seizure (permanent delegate)",
+        "Compliance roles (Blacklister, Seizer)",
+        "Multisig support",
       ],
     };
   }
@@ -729,7 +809,10 @@ export class SolanaStablecoin {
    * Check if stablecoin has SSS-2 features
    */
   hasSSS2Features(stablecoinState: StablecoinState): boolean {
-    return (stablecoinState.features & 1) !== 0 || (stablecoinState.features & 2) !== 0;
+    return (
+      (stablecoinState.features & 1) !== 0 ||
+      (stablecoinState.features & 2) !== 0
+    );
   }
 
   /**
@@ -737,12 +820,12 @@ export class SolanaStablecoin {
    */
   decodeRoles(roles: number): string[] {
     const roleNames: string[] = [];
-    if (roles & ROLE_MASTER) roleNames.push('MASTER');
-    if (roles & ROLE_MINTER) roleNames.push('MINTER');
-    if (roles & ROLE_BURNER) roleNames.push('BURNER');
-    if (roles & ROLE_PAUSER) roleNames.push('PAUSER');
-    if (roles & 16) roleNames.push('BLACKLISTER');
-    if (roles & 32) roleNames.push('SEIZER');
+    if (roles & ROLE_MASTER) roleNames.push("MASTER");
+    if (roles & ROLE_MINTER) roleNames.push("MINTER");
+    if (roles & ROLE_BURNER) roleNames.push("BURNER");
+    if (roles & ROLE_PAUSER) roleNames.push("PAUSER");
+    if (roles & 16) roleNames.push("BLACKLISTER");
+    if (roles & 32) roleNames.push("SEIZER");
     return roleNames;
   }
 }

@@ -7,9 +7,9 @@ import {
   TransactionInstruction,
   SystemProgram,
   SendOptions,
-} from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
-import type { SDKResult, StablecoinInfo } from './types';
+} from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import type { SDKResult, StablecoinInfo } from "./types";
 
 /**
  * SSS-1 Basic RBAC Stablecoin
@@ -56,9 +56,14 @@ export class SSS1Stablecoin {
     amount: BN;
   }): Promise<SDKResult> {
     try {
-      console.log(`Minting ${options.amount.toString()} tokens to ${options.recipient.toString()}`);
+      console.log(
+        `Minting ${options.amount.toString()} tokens to ${options.recipient.toString()}`
+      );
       // Placeholder - would call mint instruction
-      return { success: true, data: { recipient: options.recipient, amount: options.amount } };
+      return {
+        success: true,
+        data: { recipient: options.recipient, amount: options.amount },
+      };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
@@ -67,9 +72,7 @@ export class SSS1Stablecoin {
   /**
    * Burn tokens from an account
    */
-  async burn(options: {
-    amount: BN;
-  }): Promise<SDKResult> {
+  async burn(options: { amount: BN }): Promise<SDKResult> {
     try {
       console.log(`Burning ${options.amount.toString()} tokens`);
       // Placeholder - would call burn instruction
@@ -82,9 +85,7 @@ export class SSS1Stablecoin {
   /**
    * Freeze an account
    */
-  async freeze(options: {
-    account: PublicKey;
-  }): Promise<SDKResult> {
+  async freeze(options: { account: PublicKey }): Promise<SDKResult> {
     try {
       console.log(`Freezing account ${options.account.toString()}`);
       // Placeholder
@@ -97,9 +98,7 @@ export class SSS1Stablecoin {
   /**
    * Thaw (unfreeze) an account
    */
-  async thaw(options: {
-    account: PublicKey;
-  }): Promise<SDKResult> {
+  async thaw(options: { account: PublicKey }): Promise<SDKResult> {
     try {
       console.log(`Thawing account ${options.account.toString()}`);
       // Placeholder
@@ -119,8 +118,8 @@ export class SSS1Stablecoin {
         success: true,
         data: {
           mint: PublicKey.default,
-          name: 'SSS-1 Stablecoin',
-          symbol: 'SSS1',
+          name: "SSS-1 Stablecoin",
+          symbol: "SSS1",
           decimals: 6,
           totalSupply: new BN(0),
           isFrozen: false,

@@ -1,16 +1,16 @@
 /**
  * Solana Stablecoin Standard (SSS) SDK
- * 
+ *
  * @module @ssb/sss-sdk
  * @description TypeScript SDK for managing SSS-1 (minimal), SSS-2 (compliant), and SSS-3 (private) stablecoins on Solana
- * 
+ *
  * @example
  * ```typescript
  * import { SolanaStablecoin, PrivacyModule, SSS3_PRESET } from '@ssb/sss-sdk';
- * 
+ *
  * const sdk = new SolanaStablecoin(connection, wallet);
  * const privacy = new PrivacyModule(connection);
- * 
+ *
  * // Initialize SSS-3 private stablecoin
  * const result = await sdk.initialize({
  *   name: 'Private USD',
@@ -23,10 +23,10 @@
  */
 
 // Core SDK
-export { SolanaStablecoin } from './SolanaStablecoin';
+export { SolanaStablecoin } from "./SolanaStablecoin";
 
 // SSS-3 Privacy Module
-export { PrivacyModule, generateElGamalKeypair } from './PrivacyModule';
+export { PrivacyModule, generateElGamalKeypair } from "./PrivacyModule";
 
 // SSS-3 Presets
 export {
@@ -40,7 +40,7 @@ export {
   SSS3_FEATURE_DESCRIPTIONS,
   validateSSS3Params,
   SSS3_INIT_STEPS,
-} from './sss3';
+} from "./sss3";
 
 // Oracle Module (Pyth Integration)
 export {
@@ -53,8 +53,8 @@ export {
   createOracleConfig,
   PYTH_FEEDS,
   PriceStatus,
-} from './oracle';
-export type { PythPrice, OracleConfig } from './oracle';
+} from "./oracle";
+export type { PythPrice, OracleConfig } from "./oracle";
 
 // Types
 export {
@@ -139,7 +139,7 @@ export {
   formatAmount,
   parseAmount,
   isSSS3 as checkSSS3,
-} from './types';
+} from "./types";
 
 // Utils
 export {
@@ -202,23 +202,23 @@ export {
   formatTimestamp,
   now,
   timeUntilEpochReset,
-} from './utils';
+} from "./utils";
 
 // ============================================
 // CONSTANTS
 // ============================================
 
 /** SDK Version */
-export const VERSION = '0.2.0';
+export const VERSION = "0.2.0";
 
 /** SDK Build Date */
-export const BUILD_DATE = new Date('2025-02-25');
+export const BUILD_DATE = new Date("2025-02-25");
 
 /** Default RPC Endpoint */
-export const DEFAULT_RPC_ENDPOINT = 'https://api.devnet.solana.com';
+export const DEFAULT_RPC_ENDPOINT = "https://api.devnet.solana.com";
 
 /** Default Commitment Level */
-export const DEFAULT_COMMITMENT = 'confirmed';
+export const DEFAULT_COMMITMENT = "confirmed";
 
 /** Default Max Batch Size */
 export const MAX_BATCH_SIZE = 10;
@@ -274,21 +274,21 @@ export const SSS3_PRIVATE_PRESET = {
 
 /**
  * Quick start preset for new developers
- * 
+ *
  * @example
  * ```typescript
  * import { quickStart } from '@ssb/sss-sdk';
- * 
+ *
  * const { initSSS1, initSSS2, initSSS3, privacy } = quickStart(connection, wallet);
- * 
+ *
  * // Initialize SSS-3 private stablecoin
  * const result = await initSSS3('Private USD', 'PUSD');
  * ```
  */
 export function quickStart(connection: any, wallet: any) {
-  const sdk = require('./SolanaStablecoin');
-  const privacyMod = require('./PrivacyModule');
-  const sss3 = require('./sss3');
+  const sdk = require("./SolanaStablecoin");
+  const privacyMod = require("./PrivacyModule");
+  const sss3 = require("./sss3");
 
   const sdkInstance = new sdk.SolanaStablecoin(connection, wallet);
   const privacyInstance = new privacyMod.PrivacyModule(connection, wallet);
@@ -355,16 +355,20 @@ export function quickStart(connection: any, wallet: any) {
     getRole: sdkInstance.getRole.bind(sdkInstance),
 
     /** Create confidential account */
-    createConfidentialAccount: privacyInstance.createConfidentialAccount.bind(privacyInstance),
+    createConfidentialAccount:
+      privacyInstance.createConfidentialAccount.bind(privacyInstance),
 
     /** Confidential transfer */
-    confidentialTransfer: privacyInstance.confidentialTransfer.bind(privacyInstance),
+    confidentialTransfer:
+      privacyInstance.confidentialTransfer.bind(privacyInstance),
 
     /** Deposit to confidential */
-    depositToConfidential: privacyInstance.depositToConfidential.bind(privacyInstance),
+    depositToConfidential:
+      privacyInstance.depositToConfidential.bind(privacyInstance),
 
     /** Withdraw from confidential */
-    withdrawFromConfidential: privacyInstance.withdrawFromConfidential.bind(privacyInstance),
+    withdrawFromConfidential:
+      privacyInstance.withdrawFromConfidential.bind(privacyInstance),
   };
 }
 
@@ -374,22 +378,22 @@ export function quickStart(connection: any, wallet: any) {
 
 export const NETWORKS = {
   /** Local validator */
-  LOCALNET: 'http://127.0.0.1:8899',
+  LOCALNET: "http://127.0.0.1:8899",
 
   /** Solana Devnet */
-  DEVNET: 'https://api.devnet.solana.com',
+  DEVNET: "https://api.devnet.solana.com",
 
   /** Solana Mainnet */
-  MAINNET: 'https://api.mainnet-beta.solana.com',
+  MAINNET: "https://api.mainnet-beta.solana.com",
 
   /** QuickNode Devnet (example) */
-  QUICKNODE_DEVNET: 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY',
+  QUICKNODE_DEVNET: "https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY",
 
   /** Helius Devnet */
-  HELIUS_DEVNET: 'https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY',
+  HELIUS_DEVNET: "https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY",
 
   /** Helius Mainnet */
-  HELIUS_MAINNET: 'https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY',
+  HELIUS_MAINNET: "https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY",
 };
 
 // ============================================
@@ -399,20 +403,24 @@ export const NETWORKS = {
 export const EXPLORERS = {
   /** SolanaFM */
   SOLANAFM: {
-    devnet: (address: string) => `https://solana.fm/address/${address}?cluster=devnet-solana`,
+    devnet: (address: string) =>
+      `https://solana.fm/address/${address}?cluster=devnet-solana`,
     mainnet: (address: string) => `https://solana.fm/address/${address}`,
   },
 
   /** Solscan */
   SOLSCAN: {
-    devnet: (address: string) => `https://solscan.io/account/${address}?cluster=devnet`,
+    devnet: (address: string) =>
+      `https://solscan.io/account/${address}?cluster=devnet`,
     mainnet: (address: string) => `https://solscan.io/account/${address}`,
   },
 
   /** Explorer.solana.com */
   EXPLORER: {
-    devnet: (address: string) => `https://explorer.solana.com/address/${address}?cluster=devnet`,
-    mainnet: (address: string) => `https://explorer.solana.com/address/${address}`,
+    devnet: (address: string) =>
+      `https://explorer.solana.com/address/${address}?cluster=devnet`,
+    mainnet: (address: string) =>
+      `https://explorer.solana.com/address/${address}`,
   },
 };
 
@@ -432,5 +440,5 @@ export function needsMigration(version: string): boolean {
  * Get migration guide URL
  */
 export function getMigrationGuide(): string {
-  return 'https://github.com/solanabr/solana-stablecoin-standard/blob/main/SDK_MIGRATION.md';
+  return "https://github.com/solanabr/solana-stablecoin-standard/blob/main/SDK_MIGRATION.md";
 }

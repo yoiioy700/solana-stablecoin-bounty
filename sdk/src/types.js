@@ -17,12 +17,12 @@ const anchor_1 = require("@coral-xyz/anchor");
  * SSS Token program ID
  * @default "b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK"
  */
-exports.SSS_TOKEN_PROGRAM_ID = new web3_js_1.PublicKey('b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK');
+exports.SSS_TOKEN_PROGRAM_ID = new web3_js_1.PublicKey("b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK");
 /**
  * SSS Transfer Hook program ID
  * @default "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
  */
-exports.SSS_TRANSFER_HOOK_PROGRAM_ID = new web3_js_1.PublicKey('97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx');
+exports.SSS_TRANSFER_HOOK_PROGRAM_ID = new web3_js_1.PublicKey("97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx");
 // ============================================
 // ROLE CONSTANTS
 // ============================================
@@ -40,12 +40,12 @@ exports.ROLE_BLACKLISTER = 16;
 exports.ROLE_SEIZER = 32;
 /** Human-readable role names */
 exports.ROLE_NAMES = {
-    1: 'MASTER',
-    2: 'MINTER',
-    4: 'BURNER',
-    8: 'PAUSER',
-    16: 'BLACKLISTER',
-    32: 'SEIZER',
+    1: "MASTER",
+    2: "MINTER",
+    4: "BURNER",
+    8: "PAUSER",
+    16: "BLACKLISTER",
+    32: "SEIZER",
 };
 // ============================================
 // FEATURE FLAGS
@@ -102,28 +102,28 @@ var TransferHookError;
 /** Decode error code to message */
 function decodeError(code) {
     const errors = {
-        [StablecoinError.Unauthorized]: 'Unauthorized: Insufficient role permissions',
-        [StablecoinError.ContractPaused]: 'Contract is paused',
-        [StablecoinError.InvalidAmount]: 'Invalid amount',
-        [StablecoinError.QuotaExceeded]: 'Minter quota exceeded',
-        [StablecoinError.RoleAlreadyAssigned]: 'Role already assigned',
-        [StablecoinError.MathOverflow]: 'Math overflow',
-        [StablecoinError.InvalidAuthority]: 'Invalid authority',
-        [StablecoinError.ComplianceNotEnabled]: 'Compliance feature not enabled',
-        [StablecoinError.AlreadyInitialized]: 'Already initialized',
-        [StablecoinError.InsufficientBalance]: 'Insufficient balance',
-        [StablecoinError.SupplyCapExceeded]: 'Supply cap exceeded',
-        [StablecoinError.EpochQuotaExceeded]: 'Epoch quota exceeded',
-        [TransferHookError.HookPaused]: 'Transfer hook paused',
-        [TransferHookError.SourceBlacklisted]: 'Source address blacklisted',
-        [TransferHookError.DestinationBlacklisted]: 'Destination address blacklisted',
-        [TransferHookError.AmountTooLow]: 'Transfer amount below minimum',
-        [TransferHookError.InvalidAuthority]: 'Invalid authority',
-        [TransferHookError.AlreadyBlacklisted]: 'Address already blacklisted',
-        [TransferHookError.BlacklistNotFound]: 'Blacklist entry not found',
-        [TransferHookError.AlreadyWhitelisted]: 'Address already whitelisted',
-        [TransferHookError.ComplianceNotEnabled]: 'Compliance not enabled',
-        [TransferHookError.SelfSeizure]: 'Cannot seize from self',
+        [StablecoinError.Unauthorized]: "Unauthorized: Insufficient role permissions",
+        [StablecoinError.ContractPaused]: "Contract is paused",
+        [StablecoinError.InvalidAmount]: "Invalid amount",
+        [StablecoinError.QuotaExceeded]: "Minter quota exceeded",
+        [StablecoinError.RoleAlreadyAssigned]: "Role already assigned",
+        [StablecoinError.MathOverflow]: "Math overflow",
+        [StablecoinError.InvalidAuthority]: "Invalid authority",
+        [StablecoinError.ComplianceNotEnabled]: "Compliance feature not enabled",
+        [StablecoinError.AlreadyInitialized]: "Already initialized",
+        [StablecoinError.InsufficientBalance]: "Insufficient balance",
+        [StablecoinError.SupplyCapExceeded]: "Supply cap exceeded",
+        [StablecoinError.EpochQuotaExceeded]: "Epoch quota exceeded",
+        [TransferHookError.HookPaused]: "Transfer hook paused",
+        [TransferHookError.SourceBlacklisted]: "Source address blacklisted",
+        [TransferHookError.DestinationBlacklisted]: "Destination address blacklisted",
+        [TransferHookError.AmountTooLow]: "Transfer amount below minimum",
+        [TransferHookError.InvalidAuthority]: "Invalid authority",
+        [TransferHookError.AlreadyBlacklisted]: "Address already blacklisted",
+        [TransferHookError.BlacklistNotFound]: "Blacklist entry not found",
+        [TransferHookError.AlreadyWhitelisted]: "Address already whitelisted",
+        [TransferHookError.ComplianceNotEnabled]: "Compliance not enabled",
+        [TransferHookError.SelfSeizure]: "Cannot seize from self",
     };
     return errors[code] || `Unknown error: ${code}`;
 }
@@ -135,11 +135,9 @@ function decodeError(code) {
  */
 function calculateFee(amount, feeBps, maxFee, minAmount) {
     if (amount.lt(minAmount)) {
-        throw new Error('Amount below minimum');
+        throw new Error("Amount below minimum");
     }
-    const fee = amount
-        .muln(feeBps)
-        .divn(10000);
+    const fee = amount.muln(feeBps).divn(10000);
     const actualFee = fee.gt(maxFee) ? maxFee : fee;
     const netAmount = amount.sub(actualFee);
     return {
@@ -159,11 +157,16 @@ function hasRole(roles, role) {
  */
 function getFeatureString(feature) {
     switch (feature) {
-        case 1: return 'Transfer Hook';
-        case 2: return 'Permanent Delegate';
-        case 4: return 'Mint Close Authority';
-        case 8: return 'Default Account State';
-        default: return 'Unknown';
+        case 1:
+            return "Transfer Hook";
+        case 2:
+            return "Permanent Delegate";
+        case 4:
+            return "Mint Close Authority";
+        case 8:
+            return "Default Account State";
+        default:
+            return "Unknown";
     }
 }
 /**
@@ -173,15 +176,15 @@ function formatAmount(amount, decimals) {
     const divisor = new anchor_1.BN(10).pow(new anchor_1.BN(decimals));
     const whole = amount.div(divisor);
     const fraction = amount.mod(divisor);
-    return `${whole}.${fraction.toString().padStart(decimals, '0')}`;
+    return `${whole}.${fraction.toString().padStart(decimals, "0")}`;
 }
 /**
  * Parse human-readable amount to BN
  */
 function parseAmount(amount, decimals) {
-    const [whole, frac = ''] = amount.split('.');
-    const fraction = frac.padEnd(decimals, '0').slice(0, decimals);
-    const wholeBN = new anchor_1.BN(whole || '0');
+    const [whole, frac = ""] = amount.split(".");
+    const fraction = frac.padEnd(decimals, "0").slice(0, decimals);
+    const wholeBN = new anchor_1.BN(whole || "0");
     const fractionBN = new anchor_1.BN(fraction);
     const divisor = new anchor_1.BN(10).pow(new anchor_1.BN(decimals));
     return wholeBN.mul(divisor).add(fractionBN);

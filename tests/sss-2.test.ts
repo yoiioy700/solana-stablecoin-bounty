@@ -6,14 +6,17 @@ import { PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
 import { assert } from "chai";
 
 // Token-2022 program ID
-const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
+const TOKEN_2022_PROGRAM_ID = new PublicKey(
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+);
 
 describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
   const tokenProgram = anchor.workspace.SssToken as Program<SssToken>;
-  const hookProgram = anchor.workspace.SssTransferHook as Program<SssTransferHook>;
+  const hookProgram = anchor.workspace
+    .SssTransferHook as Program<SssTransferHook>;
 
   // Use a generated mint keypair — PDAs derive from mint.key()
   const mintKeypair = Keypair.generate();
@@ -38,8 +41,14 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
 
   before(async () => {
     // Airdrop to test accounts
-    await provider.connection.requestAirdrop(normalUser.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL);
-    await provider.connection.requestAirdrop(blacklistedUser.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL);
+    await provider.connection.requestAirdrop(
+      normalUser.publicKey,
+      10 * anchor.web3.LAMPORTS_PER_SOL
+    );
+    await provider.connection.requestAirdrop(
+      blacklistedUser.publicKey,
+      10 * anchor.web3.LAMPORTS_PER_SOL
+    );
 
     // Derive PDAs using mint.key() (matching on-chain seeds)
     [stablecoinPDA] = PublicKey.findProgramAddressSync(
@@ -48,12 +57,20 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
     );
 
     [masterRolePDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("role"), provider.wallet.publicKey.toBuffer(), mintKeypair.publicKey.toBuffer()],
+      [
+        Buffer.from("role"),
+        provider.wallet.publicKey.toBuffer(),
+        mintKeypair.publicKey.toBuffer(),
+      ],
       tokenProgram.programId
     );
 
     [minterInfoPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("minter"), provider.wallet.publicKey.toBuffer(), mintKeypair.publicKey.toBuffer()],
+      [
+        Buffer.from("minter"),
+        provider.wallet.publicKey.toBuffer(),
+        mintKeypair.publicKey.toBuffer(),
+      ],
       tokenProgram.programId
     );
 
@@ -64,7 +81,11 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
 
     // Derive blacklist entry
     [blacklistEntryPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("blacklist"), hookConfigPDA.toBuffer(), blacklistedUser.publicKey.toBuffer()],
+      [
+        Buffer.from("blacklist"),
+        hookConfigPDA.toBuffer(),
+        blacklistedUser.publicKey.toBuffer(),
+      ],
       hookProgram.programId
     );
   });
@@ -88,7 +109,9 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
       console.log("SSS-2 Initialize tx:", tx);
 
       // Verify state
-      const state = await tokenProgram.account.stablecoinState.fetch(stablecoinPDA);
+      const state = await tokenProgram.account.stablecoinState.fetch(
+        stablecoinPDA
+      );
       assert.equal(state.name, name);
       assert.equal(state.symbol, symbol);
       assert.equal(state.decimals, decimals);
@@ -109,7 +132,9 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const config = await hookProgram.account.transferHookConfig.fetch(hookConfigPDA);
+      const config = await hookProgram.account.transferHookConfig.fetch(
+        hookConfigPDA
+      );
       assert.equal(config.transferFeeBasisPoints, 100);
       assert.equal(config.maxTransferFee.toNumber(), 100000);
       assert.equal(config.blacklistEnabled, true);
@@ -175,7 +200,9 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const balance = await provider.connection.getTokenAccountBalance(sourceTokenAccount);
+      const balance = await provider.connection.getTokenAccountBalance(
+        sourceTokenAccount
+      );
       assert.equal(balance.value.uiAmount, 10);
     });
   });
@@ -193,8 +220,13 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const entry = await hookProgram.account.blacklistEntry.fetch(blacklistEntryPDA);
-      assert.equal(entry.address.toBase58(), blacklistedUser.publicKey.toBase58());
+      const entry = await hookProgram.account.blacklistEntry.fetch(
+        blacklistEntryPDA
+      );
+      assert.equal(
+        entry.address.toBase58(),
+        blacklistedUser.publicKey.toBase58()
+      );
       assert.equal(entry.isActive, true);
     });
 
@@ -208,7 +240,9 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const entry = await hookProgram.account.blacklistEntry.fetch(blacklistEntryPDA);
+      const entry = await hookProgram.account.blacklistEntry.fetch(
+        blacklistEntryPDA
+      );
       assert.equal(entry.isActive, false);
     });
   });
@@ -219,7 +253,11 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
 
       // Get PDA for whitelist (if exists)
       const [whitelistPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("whitelist"), hookConfigPDA.toBuffer(), provider.wallet.publicKey.toBuffer()],
+        [
+          Buffer.from("whitelist"),
+          hookConfigPDA.toBuffer(),
+          provider.wallet.publicKey.toBuffer(),
+        ],
         hookProgram.programId
       );
 
@@ -255,12 +293,12 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
     it("Should update transfer fee", async () => {
       await hookProgram.methods
         .updateConfig(
-          50,      // 0.5% fee
-          null,    // keep max_transfer_fee
-          null,    // keep min_transfer_amount
-          null,    // keep is_paused
-          null,    // keep blacklist_enabled
-          null     // keep permanent_delegate
+          50, // 0.5% fee
+          null, // keep max_transfer_fee
+          null, // keep min_transfer_amount
+          null, // keep is_paused
+          null, // keep blacklist_enabled
+          null // keep permanent_delegate
         )
         .accounts({
           authority: provider.wallet.publicKey,
@@ -268,19 +306,21 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const config = await hookProgram.account.transferHookConfig.fetch(hookConfigPDA);
+      const config = await hookProgram.account.transferHookConfig.fetch(
+        hookConfigPDA
+      );
       assert.equal(config.transferFeeBasisPoints, 50);
     });
 
     it("Should pause transfer hook", async () => {
       await hookProgram.methods
         .updateConfig(
-          null,    // keep transfer_fee_bps
-          null,    // keep max_transfer_fee
-          null,    // keep min_transfer_amount
-          true,    // pause
-          null,    // keep blacklist_enabled
-          null     // keep permanent_delegate
+          null, // keep transfer_fee_bps
+          null, // keep max_transfer_fee
+          null, // keep min_transfer_amount
+          true, // pause
+          null, // keep blacklist_enabled
+          null // keep permanent_delegate
         )
         .accounts({
           authority: provider.wallet.publicKey,
@@ -288,7 +328,9 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const config = await hookProgram.account.transferHookConfig.fetch(hookConfigPDA);
+      const config = await hookProgram.account.transferHookConfig.fetch(
+        hookConfigPDA
+      );
       assert.equal(config.isPaused, true);
 
       // Unpause for next tests
@@ -307,7 +349,11 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
       const blacklister = Keypair.generate().publicKey;
 
       const [blacklisterRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("role"), blacklister.toBuffer(), mintKeypair.publicKey.toBuffer()],
+        [
+          Buffer.from("role"),
+          blacklister.toBuffer(),
+          mintKeypair.publicKey.toBuffer(),
+        ],
         tokenProgram.programId
       );
 
@@ -323,7 +369,9 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const role = await tokenProgram.account.roleAccount.fetch(blacklisterRolePDA);
+      const role = await tokenProgram.account.roleAccount.fetch(
+        blacklisterRolePDA
+      );
       assert.equal(role.roles, 16);
     });
 
@@ -331,7 +379,11 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
       const seizer = Keypair.generate().publicKey;
 
       const [seizerRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("role"), seizer.toBuffer(), mintKeypair.publicKey.toBuffer()],
+        [
+          Buffer.from("role"),
+          seizer.toBuffer(),
+          mintKeypair.publicKey.toBuffer(),
+        ],
         tokenProgram.programId
       );
 
@@ -357,7 +409,11 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
       const whitelistedAddr = Keypair.generate().publicKey;
 
       const [whitelistPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("whitelist"), hookConfigPDA.toBuffer(), whitelistedAddr.toBuffer()],
+        [
+          Buffer.from("whitelist"),
+          hookConfigPDA.toBuffer(),
+          whitelistedAddr.toBuffer(),
+        ],
         hookProgram.programId
       );
 
@@ -372,7 +428,9 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
         })
         .rpc();
 
-      const entry = await hookProgram.account.whitelistEntry.fetch(whitelistPDA);
+      const entry = await hookProgram.account.whitelistEntry.fetch(
+        whitelistPDA
+      );
       assert.equal(entry.address.toBase58(), whitelistedAddr.toBase58());
     });
   });
@@ -384,10 +442,7 @@ describe("SSS Token - SSS-2 (Compliant Stablecoin)", () => {
 
       try {
         await hookProgram.methods
-          .batchBlacklist(
-            [addr1, addr2],
-            ["Batch reason 1", "Batch reason 2"]
-          )
+          .batchBlacklist([addr1, addr2], ["Batch reason 1", "Batch reason 2"])
           .accounts({
             authority: provider.wallet.publicKey,
             config: hookConfigPDA,

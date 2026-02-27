@@ -1,111 +1,122 @@
 // @ts-nocheck
-import { 
-  Connection, 
-  PublicKey, 
-  Keypair, 
+import {
+  Connection,
+  PublicKey,
+  Keypair,
   TransactionInstruction,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
-  Transaction
-} from '@solana/web3.js';
-import { 
-  Program, 
-  AnchorProvider, 
-  BN 
-} from '@coral-xyz/anchor';
-import * as anchor from '@coral-xyz/anchor';
-import { 
+  Transaction,
+} from "@solana/web3.js";
+import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import {
   SSS_TOKEN_PROGRAM_ID,
   SDKResult,
   ConfidentialAccount,
   AllowlistEntry,
   RangeProof,
-  ElGamalPubkey
-} from './types';
+  ElGamalPubkey,
+} from "./types";
 
 // SSS-3 Privacy Module - confidential transfers with ZK proofs
 export class PrivacyModule {
   private connection: Connection;
   private provider!: AnchorProvider;
   private program!: Program;
-  
+
   constructor(connection: Connection, wallet?: anchor.Wallet) {
     this.connection = connection;
     if (wallet) {
       this.provider = new AnchorProvider(connection, wallet, {
-        commitment: 'confirmed',
+        commitment: "confirmed",
       });
     }
   }
-  
+
   initialize(program: Program) {
     this.program = program;
     return this;
   }
-  
+
   // Config PDA: ["confidentiality", "config", mint]
   getConfidentialityConfigPDA(stablecoin: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('confidentiality'), Buffer.from('config'), stablecoin.toBuffer()],
+      [
+        Buffer.from("confidentiality"),
+        Buffer.from("config"),
+        stablecoin.toBuffer(),
+      ],
       SSS_TOKEN_PROGRAM_ID
     )[0];
   }
-  
+
   // ElGamal registry PDA: ["confidentiality", "elgamal", mint, owner]
   getElGamalRegistryPDA(stablecoin: PublicKey, owner: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
       [
-        Buffer.from('confidentiality'),
-        Buffer.from('elgamal'),
+        Buffer.from("confidentiality"),
+        Buffer.from("elgamal"),
         stablecoin.toBuffer(),
-        owner.toBuffer()
+        owner.toBuffer(),
       ],
       SSS_TOKEN_PROGRAM_ID
     )[0];
   }
-  
+
   // Confidential account PDA: ["confidentiality", "account", mint, owner]
-  getConfidentialAccountPDA(stablecoin: PublicKey, owner: PublicKey): PublicKey {
+  getConfidentialAccountPDA(
+    stablecoin: PublicKey,
+    owner: PublicKey
+  ): PublicKey {
     return PublicKey.findProgramAddressSync(
       [
-        Buffer.from('confidentiality'),
-        Buffer.from('account'),
+        Buffer.from("confidentiality"),
+        Buffer.from("account"),
         stablecoin.toBuffer(),
-        owner.toBuffer()
+        owner.toBuffer(),
       ],
       SSS_TOKEN_PROGRAM_ID
     )[0];
   }
-  
+
   // Range proof verifier PDA: ["confidentiality", "verifier", mint]
   getRangeProofVerifierPDA(stablecoin: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('confidentiality'), Buffer.from('verifier'), stablecoin.toBuffer()],
+      [
+        Buffer.from("confidentiality"),
+        Buffer.from("verifier"),
+        stablecoin.toBuffer(),
+      ],
       SSS_TOKEN_PROGRAM_ID
     )[0];
   }
-  
+
   // Allowlist PDA: ["confidentiality", "allowlist", mint, address]
   getAllowlistPDA(stablecoin: PublicKey, address: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
       [
-        Buffer.from('confidentiality'),
-        Buffer.from('allowlist'),
+        Buffer.from("confidentiality"),
+        Buffer.from("allowlist"),
         stablecoin.toBuffer(),
-        address.toBuffer()
+        address.toBuffer(),
       ],
       SSS_TOKEN_PROGRAM_ID
     )[0];
   }
-  
+
   // Auditor PDA: ["confidentiality", "auditor", mint]
   getAuditorPDA(stablecoin: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('confidentiality'), Buffer.from('auditor'), stablecoin.toBuffer()],
+      [
+        Buffer.from("confidentiality"),
+        Buffer.from("auditor"),
+        stablecoin.toBuffer(),
+      ],
       SSS_TOKEN_PROGRAM_ID
     )[0];
   }
-  
+
   // Enable confidential transfers for a stablecoin
   async enableConfidentialTransfers(params: {
     stablecoin: PublicKey;
@@ -113,27 +124,33 @@ export class PrivacyModule {
     auditor?: PublicKey;
     requireAllowlist?: boolean;
     maxBalance?: BN;
-  }): Promise<SDKResult<{
-    signature: string;
-    config: PublicKey;
-  }>> {
+  }): Promise<
+    SDKResult<{
+      signature: string;
+      config: PublicKey;
+    }>
+  > {
     try {
-      const { 
-        stablecoin, 
-        authority, 
+      const {
+        stablecoin,
+        authority,
         auditor = null,
         requireAllowlist = false,
-        maxBalance = new BN(0)
+        maxBalance = new BN(0),
       } = params;
-      
+
       const [masterRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()],
+        [
+          Buffer.from("role"),
+          authority.publicKey.toBuffer(),
+          stablecoin.toBuffer(),
+        ],
         SSS_TOKEN_PROGRAM_ID
       );
-      
+
       const configPDA = this.getConfidentialityConfigPDA(stablecoin);
       const verifierPDA = this.getRangeProofVerifierPDA(stablecoin);
-      
+
       const tx = await this.program.methods
         .enableConfidentialTransfers(
           requireAllowlist,
@@ -152,7 +169,7 @@ export class PrivacyModule {
         })
         .signers([authority])
         .rpc();
-      
+
       return {
         success: true,
         signature: tx,
@@ -168,20 +185,22 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Create confidential token account
   async createConfidentialAccount(params: {
     mint: PublicKey;
     owner: Keypair;
     elgamalPubkey?: ElGamalPubkey;
-  }): Promise<SDKResult<{
-    account: PublicKey;
-    elgamalRegistry: PublicKey;
-    signature: string;
-  }>> {
+  }): Promise<
+    SDKResult<{
+      account: PublicKey;
+      elgamalRegistry: PublicKey;
+      signature: string;
+    }>
+  > {
     try {
       const { mint, owner, elgamalPubkey } = params;
-      
+
       let elGamalKey: ElGamalPubkey;
       if (elgamalPubkey) {
         elGamalKey = elgamalPubkey;
@@ -191,25 +210,27 @@ export class PrivacyModule {
           commitment: Buffer.alloc(32),
         };
       }
-      
+
       const accountPDA = this.getConfidentialAccountPDA(mint, owner.publicKey);
       const registryPDA = this.getElGamalRegistryPDA(mint, owner.publicKey);
-      
+
       // Create token account if needed
       const tokenAccount = await anchor.utils.token.associatedAddress({
         mint,
         owner: owner.publicKey,
       });
-      
-      const tokenAccountInfo = await this.connection.getAccountInfo(tokenAccount);
+
+      const tokenAccountInfo = await this.connection.getAccountInfo(
+        tokenAccount
+      );
       const instructions: TransactionInstruction[] = [];
-      
+
       if (!tokenAccountInfo) {
         // Create ATA - placeholder for actual implementation
         // In production, use spl-token createAssociatedTokenAccountInstruction
-        console.log('Creating ATA for', mint.toBase58());
+        console.log("Creating ATA for", mint.toBase58());
       }
-      
+
       const createConfidentialIx = await this.program.methods
         .createConfidentialAccount(elGamalKey.publicKey)
         .accounts({
@@ -223,22 +244,22 @@ export class PrivacyModule {
           rent: SYSVAR_RENT_PUBKEY,
         })
         .instruction();
-      
+
       instructions.push(createConfidentialIx);
-      
+
       const transaction = new Transaction().add(...instructions);
       transaction.feePayer = owner.publicKey;
       transaction.recentBlockhash = (
         await this.connection.getLatestBlockhash()
       ).blockhash;
       transaction.sign(owner);
-      
+
       const signature = await this.connection.sendRawTransaction(
         transaction.serialize()
       );
-      
-      await this.connection.confirmTransaction(signature, 'confirmed');
-      
+
+      await this.connection.confirmTransaction(signature, "confirmed");
+
       return {
         success: true,
         signature,
@@ -255,7 +276,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Fetch confidential account data
   async getConfidentialAccount(
     confidentialAccount: PublicKey
@@ -263,14 +284,14 @@ export class PrivacyModule {
     try {
       // Mock fetch - in production use actual program.account.confidentialAccount.fetch
       const mockAccount: ConfidentialAccount = {
-        owner: new PublicKey('11111111111111111111111111111111'),
-        mint: new PublicKey('11111111111111111111111111111111'),
+        owner: new PublicKey("11111111111111111111111111111111"),
+        mint: new PublicKey("11111111111111111111111111111111"),
         pendingBalance: Buffer.alloc(32),
         availableBalance: Buffer.alloc(32),
         allowTimestamps: new BN(0),
         bump: 0,
       };
-      
+
       return {
         success: true,
         data: mockAccount,
@@ -282,7 +303,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Perform confidential transfer with ZK proof
   async confidentialTransfer(params: {
     source: PublicKey;
@@ -294,25 +315,28 @@ export class PrivacyModule {
     auditorDecryptionKey?: Buffer;
   }): Promise<SDKResult<{ signature: string }>> {
     try {
-      const { 
-        source, 
-        destination, 
-        mint, 
-        amount, 
+      const {
+        source,
+        destination,
+        mint,
+        amount,
         authority,
         proofData,
-        auditorDecryptionKey
+        auditorDecryptionKey,
       } = params;
-      
+
       const configPDA = this.getConfidentialityConfigPDA(mint);
-      const sourceRegistry = this.getElGamalRegistryPDA(mint, authority.publicKey);
-      
+      const sourceRegistry = this.getElGamalRegistryPDA(
+        mint,
+        authority.publicKey
+      );
+
       // Mock fetch - in production use actual program.account.confidentialAccount.fetch
-      const destOwner = new PublicKey('11111111111111111111111111111111');
+      const destOwner = new PublicKey("11111111111111111111111111111111");
       const destRegistry = this.getElGamalRegistryPDA(mint, destOwner);
-      
+
       const verifierPDA = this.getRangeProofVerifierPDA(mint);
-      
+
       let rangeProof: RangeProof;
       if (proofData) {
         rangeProof = proofData;
@@ -322,7 +346,7 @@ export class PrivacyModule {
           commitment: Buffer.alloc(32),
         };
       }
-      
+
       const confidentialTransferIx = await this.program.methods
         .confidentialTransfer(
           amount,
@@ -342,20 +366,20 @@ export class PrivacyModule {
           tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
         })
         .instruction();
-      
+
       const transaction = new Transaction().add(confidentialTransferIx);
       transaction.feePayer = authority.publicKey;
       transaction.recentBlockhash = (
         await this.connection.getLatestBlockhash()
       ).blockhash;
       transaction.sign(authority);
-      
+
       const signature = await this.connection.sendRawTransaction(
         transaction.serialize()
       );
-      
-      await this.connection.confirmTransaction(signature, 'confirmed');
-      
+
+      await this.connection.confirmTransaction(signature, "confirmed");
+
       return {
         success: true,
         signature,
@@ -367,7 +391,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Deposit tokens into confidential account
   async depositToConfidential(params: {
     tokenAccount: PublicKey;
@@ -377,11 +401,12 @@ export class PrivacyModule {
     authority: Keypair;
   }): Promise<SDKResult<{ signature: string }>> {
     try {
-      const { tokenAccount, confidentialAccount, mint, amount, authority } = params;
-      
+      const { tokenAccount, confidentialAccount, mint, amount, authority } =
+        params;
+
       const configPDA = this.getConfidentialityConfigPDA(mint);
       const verifierPDA = this.getRangeProofVerifierPDA(mint);
-      
+
       const tx = await this.program.methods
         .depositToConfidential(amount)
         .accounts({
@@ -395,7 +420,7 @@ export class PrivacyModule {
         })
         .signers([authority])
         .rpc();
-      
+
       return {
         success: true,
         signature: tx,
@@ -407,7 +432,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Withdraw tokens from confidential account
   async withdrawFromConfidential(params: {
     confidentialAccount: PublicKey;
@@ -418,11 +443,18 @@ export class PrivacyModule {
     decryptionKey: Buffer;
   }): Promise<SDKResult<{ signature: string }>> {
     try {
-      const { confidentialAccount, tokenAccount, mint, amount, authority, decryptionKey } = params;
-      
+      const {
+        confidentialAccount,
+        tokenAccount,
+        mint,
+        amount,
+        authority,
+        decryptionKey,
+      } = params;
+
       const configPDA = this.getConfidentialityConfigPDA(mint);
       const verifierPDA = this.getRangeProofVerifierPDA(mint);
-      
+
       const tx = await this.program.methods
         .withdrawFromConfidential(amount, decryptionKey)
         .accounts({
@@ -436,7 +468,7 @@ export class PrivacyModule {
         })
         .signers([authority])
         .rpc();
-      
+
       return {
         success: true,
         signature: tx,
@@ -448,7 +480,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Add address to allowlist
   async addToAllowlist(params: {
     stablecoin: PublicKey;
@@ -458,16 +490,26 @@ export class PrivacyModule {
     expiry?: BN;
   }): Promise<SDKResult<{ signature: string; entry: PublicKey }>> {
     try {
-      const { stablecoin, address, authority, reason = '', expiry = new BN(0) } = params;
-      
+      const {
+        stablecoin,
+        address,
+        authority,
+        reason = "",
+        expiry = new BN(0),
+      } = params;
+
       const [authorityRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()],
+        [
+          Buffer.from("role"),
+          authority.publicKey.toBuffer(),
+          stablecoin.toBuffer(),
+        ],
         SSS_TOKEN_PROGRAM_ID
       );
-      
+
       const configPDA = this.getConfidentialityConfigPDA(stablecoin);
       const allowlistPDA = this.getAllowlistPDA(stablecoin, address);
-      
+
       const tx = await this.program.methods
         .addToAllowlist(reason, expiry)
         .accounts({
@@ -481,7 +523,7 @@ export class PrivacyModule {
         })
         .signers([authority])
         .rpc();
-      
+
       return {
         success: true,
         signature: tx,
@@ -497,7 +539,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Remove address from allowlist
   async removeFromAllowlist(params: {
     stablecoin: PublicKey;
@@ -506,14 +548,18 @@ export class PrivacyModule {
   }): Promise<SDKResult<{ signature: string }>> {
     try {
       const { stablecoin, address, authority } = params;
-      
+
       const [authorityRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()],
+        [
+          Buffer.from("role"),
+          authority.publicKey.toBuffer(),
+          stablecoin.toBuffer(),
+        ],
         SSS_TOKEN_PROGRAM_ID
       );
-      
+
       const allowlistPDA = this.getAllowlistPDA(stablecoin, address);
-      
+
       const tx = await this.program.methods
         .removeFromAllowlist()
         .accounts({
@@ -525,7 +571,7 @@ export class PrivacyModule {
         })
         .signers([authority])
         .rpc();
-      
+
       return {
         success: true,
         signature: tx,
@@ -537,7 +583,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Check if address is on allowlist
   async isAddressAllowed(
     stablecoin: PublicKey,
@@ -545,18 +591,18 @@ export class PrivacyModule {
   ): Promise<SDKResult<{ isAllowed: boolean; entry?: AllowlistEntry }>> {
     try {
       const allowlistPDA = this.getAllowlistPDA(stablecoin, address);
-      
+
       try {
         // Mock fetch - in production use actual program.account.allowlistEntry.fetch
         const entry: any = {
           address: address,
           stablecoin: stablecoin,
-          reason: 'Verified',
+          reason: "Verified",
           isActive: true,
           createdAt: Date.now(),
           expiry: new BN(0),
         };
-        
+
         const now = Math.floor(Date.now() / 1000);
         if (entry.expiry.toNumber() > 0 && entry.expiry.toNumber() < now) {
           return {
@@ -564,7 +610,7 @@ export class PrivacyModule {
             data: { isAllowed: false },
           };
         }
-        
+
         return {
           success: true,
           data: {
@@ -585,23 +631,27 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Get all allowlisted addresses
-  async getAllowlist(stablecoin: PublicKey): Promise<SDKResult<{
-    addresses: Array<{ address: PublicKey; reason: string; expiry?: number }>;
-  }>> {
+  async getAllowlist(stablecoin: PublicKey): Promise<
+    SDKResult<{
+      addresses: Array<{ address: PublicKey; reason: string; expiry?: number }>;
+    }>
+  > {
     try {
       // Mock fetch - in production use actual program.account.allowlistEntry.all
       const entries: any[] = [];
-      
+
       const filtered = entries
         .filter((e: any) => e.account?.isActive)
         .map((e: any) => ({
-          address: e.account?.address || new PublicKey('11111111111111111111111111111111'),
-          reason: e.account?.reason || '',
+          address:
+            e.account?.address ||
+            new PublicKey("11111111111111111111111111111111"),
+          reason: e.account?.reason || "",
           expiry: e.account?.expiry?.toNumber() || undefined,
         }));
-      
+
       return {
         success: true,
         data: { addresses: filtered },
@@ -613,7 +663,7 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Set auditor for regulatory compliance
   async setAuditor(params: {
     stablecoin: PublicKey;
@@ -623,15 +673,19 @@ export class PrivacyModule {
   }): Promise<SDKResult<{ signature: string }>> {
     try {
       const { stablecoin, auditor, auditorPubkey, authority } = params;
-      
+
       const [authorityRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from('role'), authority.publicKey.toBuffer(), stablecoin.toBuffer()],
+        [
+          Buffer.from("role"),
+          authority.publicKey.toBuffer(),
+          stablecoin.toBuffer(),
+        ],
         SSS_TOKEN_PROGRAM_ID
       );
-      
+
       const auditorPDA = this.getAuditorPDA(stablecoin);
       const configPDA = this.getConfidentialityConfigPDA(stablecoin);
-      
+
       const tx = await this.program.methods
         .setAuditor(auditorPubkey)
         .accounts({
@@ -645,7 +699,7 @@ export class PrivacyModule {
         })
         .signers([authority])
         .rpc();
-      
+
       return {
         success: true,
         signature: tx,
@@ -657,9 +711,12 @@ export class PrivacyModule {
       };
     }
   }
-  
+
   // Encrypt amount for transfer (client-side)
-  encryptAmount(amount: BN, recipientPubkey: Buffer): {
+  encryptAmount(
+    amount: BN,
+    recipientPubkey: Buffer
+  ): {
     encrypted: Buffer;
     commitment: Buffer;
   } {
@@ -668,7 +725,7 @@ export class PrivacyModule {
       commitment: Buffer.alloc(32),
     };
   }
-  
+
   // Generate range proof (client-side)
   generateRangeProof(
     amount: BN,

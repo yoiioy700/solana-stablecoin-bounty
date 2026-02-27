@@ -1,15 +1,15 @@
-import { PublicKey } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
+import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 /**
  * SSS Token program ID
  * @default "b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK"
  */
-export declare const SSS_TOKEN_PROGRAM_ID: any;
+export declare const SSS_TOKEN_PROGRAM_ID: PublicKey;
 /**
  * SSS Transfer Hook program ID
  * @default "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
  */
-export declare const SSS_TRANSFER_HOOK_PROGRAM_ID: any;
+export declare const SSS_TRANSFER_HOOK_PROGRAM_ID: PublicKey;
 /** Full control - can do everything */
 export declare const ROLE_MASTER = 1;
 /** Can mint tokens */

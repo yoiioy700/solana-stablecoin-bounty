@@ -1,7 +1,7 @@
-import { Connection, PublicKey, Keypair } from '@solana/web3.js';
-import { Program, BN } from '@coral-xyz/anchor';
-import * as anchor from '@coral-xyz/anchor';
-import { SDKResult, ConfidentialAccount, AllowlistEntry, RangeProof, ElGamalPubkey } from './types';
+import { Connection, PublicKey, Keypair } from "@solana/web3.js";
+import { Program, BN } from "@coral-xyz/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { SDKResult, ConfidentialAccount, AllowlistEntry, RangeProof, ElGamalPubkey } from "./types";
 export declare class PrivacyModule {
     private connection;
     private provider;

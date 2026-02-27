@@ -1,7 +1,7 @@
-import { PublicKey, Connection, Keypair, Transaction } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
-import { logger } from '../../shared/logger';
-import { redis } from '../../shared/redis';
+import { PublicKey, Connection, Keypair, Transaction } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import { logger } from "../../shared/logger";
+import { redis } from "../../shared/redis";
 
 interface MintRequest {
   recipient: string;
@@ -20,8 +20,8 @@ export class MintService {
 
   constructor() {
     this.connection = new Connection(
-      process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-      'confirmed'
+      process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com",
+      "confirmed"
     );
   }
 
@@ -34,14 +34,14 @@ export class MintService {
       try {
         recipientPubkey = new PublicKey(recipient);
       } catch {
-        return { success: false, error: 'Invalid recipient address' };
+        return { success: false, error: "Invalid recipient address" };
       }
 
       // Check rate limit
       const key = `mint:${recipient}`;
       const current = await redis.get(key);
       if (current && parseInt(current) > 10) {
-        return { success: false, error: 'Rate limit exceeded' };
+        return { success: false, error: "Rate limit exceeded" };
       }
       await redis.incr(key);
       await redis.expire(key, 3600);
@@ -49,7 +49,9 @@ export class MintService {
       // Queue the mint (in production, this would be processed by a worker)
       const jobId = await this.queueMint(recipient, amount);
 
-      logger.info(`Mint queued: jobId=${jobId}, recipient=${recipient}, amount=${amount}`);
+      logger.info(
+        `Mint queued: jobId=${jobId}, recipient=${recipient}, amount=${amount}`
+      );
 
       // For demo, return a mock signature
       return {
@@ -57,22 +59,24 @@ export class MintService {
         signature: `mock_${jobId}`,
       };
     } catch (error: any) {
-      logger.error('Mint error:', error);
+      logger.error("Mint error:", error);
       return { success: false, error: error.message };
     }
   }
 
   private async queueMint(recipient: string, amount: string): Promise<string> {
-    const jobId = `mint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+    const jobId = `mint_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
     await redis.setex(
       `job:${jobId}`,
       3600,
       JSON.stringify({
-        type: 'mint',
+        type: "mint",
         recipient,
         amount,
-        status: 'pending',
+        status: "pending",
         createdAt: Date.now(),
       })
     );
@@ -81,7 +85,7 @@ export class MintService {
   }
 
   async getPendingMints(): Promise<any[]> {
-    const keys = await redis.keys('job:mint_*');
+    const keys = await redis.keys("job:mint_*");
     const jobs = await Promise.all(
       keys.map(async (key) => {
         const data = await redis.get(key);

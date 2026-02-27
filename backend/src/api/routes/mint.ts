@@ -1,24 +1,27 @@
-import { Router } from 'express';
-import { body, validationResult } from 'express-validator';
-import { MintService } from '../services/mintService';
-import { logger } from '../../shared/logger';
+import { Router } from "express";
+import { body, validationResult } from "express-validator";
+import { MintService } from "../services/mintService";
+import { logger } from "../../shared/logger";
 
 const router = Router();
 const mintService = new MintService();
 
-router.post('/',
+router.post(
+  "/",
   [
-    body('recipient').isString().matches(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/),
-    body('amount').isString().matches(/^\d+$/),
-    body('authority').optional().isString(),
+    body("recipient")
+      .isString()
+      .matches(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/),
+    body("amount").isString().matches(/^\d+$/),
+    body("authority").optional().isString(),
   ],
-  async (req, res, next) => {
+  async (req: any, res: any, next: any) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({
           success: false,
-          error: 'Validation failed',
+          error: "Validation failed",
           details: errors.array(),
         });
       }
@@ -54,12 +57,12 @@ router.post('/',
   }
 );
 
-router.get('/queue', async (req, res) => {
+router.get("/queue", async (req, res) => {
   try {
     const queue = await mintService.getPendingMints();
     res.json({ success: true, data: queue });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to get queue' });
+    res.status(500).json({ success: false, error: "Failed to get queue" });
   }
 });
 

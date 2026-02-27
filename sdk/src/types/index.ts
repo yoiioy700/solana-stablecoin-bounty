@@ -1,6 +1,6 @@
 // Mock types for SSS contracts
-import { BN } from '@coral-xyz/anchor';
-import { PublicKey } from '@solana/web3.js';
+import { BN } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
 
 export interface ConfidentialAccount {
   owner: PublicKey;

@@ -1,9 +1,6 @@
-import { Connection, PublicKey, Keypair } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
-import {
-  SSS_TRANSFER_HOOK_PROGRAM_ID,
-  SDKResult,
-} from './types';
+import { Connection, PublicKey, Keypair } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import { SSS_TRANSFER_HOOK_PROGRAM_ID, SDKResult } from "./types";
 
 /**
  * Compliance Module for SSS-2 transfer hooks
@@ -12,42 +9,42 @@ import {
 export class ComplianceModule {
   private connection: Connection;
   private programId: PublicKey;
-  
+
   constructor(connection: Connection, programId?: PublicKey) {
     this.connection = connection;
     this.programId = programId || SSS_TRANSFER_HOOK_PROGRAM_ID;
   }
-  
+
   /**
    * Get hook config PDA
    */
   getConfigPDA(stablecoin: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('hook_config'), stablecoin.toBuffer()],
+      [Buffer.from("hook_config"), stablecoin.toBuffer()],
       this.programId
     )[0];
   }
-  
+
   /**
    * Get blacklist entry PDA
    */
   getBlacklistPDA(config: PublicKey, address: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('blacklist'), config.toBuffer(), address.toBuffer()],
+      [Buffer.from("blacklist"), config.toBuffer(), address.toBuffer()],
       this.programId
     )[0];
   }
-  
+
   /**
    * Get whitelist entry PDA
    */
   getWhitelistPDA(config: PublicKey, address: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), config.toBuffer(), address.toBuffer()],
+      [Buffer.from("whitelist"), config.toBuffer(), address.toBuffer()],
       this.programId
     )[0];
   }
-  
+
   /**
    * Initialize transfer hook
    */
@@ -68,7 +65,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Add address to blacklist
    */
@@ -87,7 +84,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Remove address from blacklist
    */
@@ -105,7 +102,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Check if address is blacklisted
    */
@@ -118,7 +115,7 @@ export class ComplianceModule {
       return false;
     }
   }
-  
+
   /**
    * Add address to whitelist
    */
@@ -126,7 +123,7 @@ export class ComplianceModule {
     config: PublicKey;
     authority: Keypair;
     target: PublicKey;
-    whitelistType: 'fee_exempt' | 'full_bypass';
+    whitelistType: "fee_exempt" | "full_bypass";
   }): Promise<SDKResult> {
     try {
       return { success: true };
@@ -137,7 +134,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Remove from whitelist
    */
@@ -155,7 +152,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Check if address is whitelisted
    */
@@ -168,7 +165,7 @@ export class ComplianceModule {
       return false;
     }
   }
-  
+
   /**
    * Seize tokens from blacklisted account
    */
@@ -190,7 +187,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Calculate transfer fee
    */
@@ -207,25 +204,25 @@ export class ComplianceModule {
     if (params.isWhitelisted || params.isDelegate) {
       return { fee: new BN(0), netAmount: params.amount };
     }
-    
+
     if (params.amount.lt(params.config.minTransferAmount)) {
-      throw new Error('Amount below minimum');
+      throw new Error("Amount below minimum");
     }
-    
+
     let fee = params.amount
       .mul(new BN(params.config.transferFeeBasisPoints))
       .div(new BN(10000));
-    
+
     if (fee.gt(params.config.maxTransferFee)) {
       fee = params.config.maxTransferFee;
     }
-    
+
     return {
       fee,
       netAmount: params.amount.sub(fee),
     };
   }
-  
+
   /**
    * Update hook configuration
    */
@@ -248,7 +245,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Get compliance status for transfer
    */
@@ -257,15 +254,23 @@ export class ComplianceModule {
     source: PublicKey;
     destination: PublicKey;
     amount: BN;
-  }): Promise<SDKResult<{
-    isCompliant: boolean;
-    shouldProceed: boolean;
-    fee: BN;
-  }>> {
+  }): Promise<
+    SDKResult<{
+      isCompliant: boolean;
+      shouldProceed: boolean;
+      fee: BN;
+    }>
+  > {
     try {
-      const isSourceBlacklisted = await this.isBlacklisted(params.config, params.source);
-      const isDestBlacklisted = await this.isBlacklisted(params.config, params.destination);
-      
+      const isSourceBlacklisted = await this.isBlacklisted(
+        params.config,
+        params.source
+      );
+      const isDestBlacklisted = await this.isBlacklisted(
+        params.config,
+        params.destination
+      );
+
       if (isSourceBlacklisted || isDestBlacklisted) {
         return {
           success: true,
@@ -276,7 +281,7 @@ export class ComplianceModule {
           },
         };
       }
-      
+
       return {
         success: true,
         data: {
@@ -292,7 +297,7 @@ export class ComplianceModule {
       };
     }
   }
-  
+
   /**
    * Batch blacklist multiple addresses
    */
@@ -304,15 +309,15 @@ export class ComplianceModule {
   ): Promise<SDKResult> {
     try {
       if (addresses.length !== reasons.length) {
-        throw new Error('Addresses and reasons length mismatch');
+        throw new Error("Addresses and reasons length mismatch");
       }
       if (addresses.length > 10) {
-        throw new Error('Maximum 10 addresses per batch');
+        throw new Error("Maximum 10 addresses per batch");
       }
-      
+
       return {
         success: true,
-        signature: 'batch-blacklist-mock',
+        signature: "batch-blacklist-mock",
         data: {
           count: addresses.length,
           authority: authority.publicKey.toBase58(),

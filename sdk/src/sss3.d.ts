@@ -1,15 +1,15 @@
-import { PublicKey } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
+import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 export declare const SSS3_PRESET: {
     readonly name: "SSS-3 Private Stablecoin";
     readonly preset: "sss-3";
     readonly decimals: 6;
     readonly enableConfidentialTransfers: true;
-    readonly maxConfidentialBalance: any;
+    readonly maxConfidentialBalance: BN;
     readonly requireAllowlist: false;
     readonly enableTransferFees: true;
     readonly transferFeeBasisPoints: 100;
-    readonly maxTransferFee: any;
+    readonly maxTransferFee: BN;
     readonly enablePermanentDelegate: true;
     readonly enableBlacklist: true;
     readonly auditor: {
@@ -17,8 +17,8 @@ export declare const SSS3_PRESET: {
         readonly pubkey: PublicKey | null;
     };
     readonly rangeProof: {
-        readonly minAmount: any;
-        readonly maxAmount: any;
+        readonly minAmount: BN;
+        readonly maxAmount: BN;
         readonly bitSize: 32 | 64;
     };
     readonly transferTimeoutSeconds: 0;
@@ -27,7 +27,7 @@ export declare const SSS3_HIGH_PRIVACY_PRESET: {
     readonly name: "SSS-3 High Privacy";
     readonly preset: "sss-3-high";
     readonly requireAllowlist: true;
-    readonly maxConfidentialBalance: any;
+    readonly maxConfidentialBalance: BN;
     readonly auditor: {
         readonly enabled: true;
         readonly pubkey: PublicKey | null;
@@ -36,12 +36,12 @@ export declare const SSS3_HIGH_PRIVACY_PRESET: {
     readonly enableConfidentialTransfers: true;
     readonly enableTransferFees: true;
     readonly transferFeeBasisPoints: 100;
-    readonly maxTransferFee: any;
+    readonly maxTransferFee: BN;
     readonly enablePermanentDelegate: true;
     readonly enableBlacklist: true;
     readonly rangeProof: {
-        readonly minAmount: any;
-        readonly maxAmount: any;
+        readonly minAmount: BN;
+        readonly maxAmount: BN;
         readonly bitSize: 32 | 64;
     };
     readonly transferTimeoutSeconds: 0;
@@ -51,10 +51,10 @@ export declare const SSS3_COMPLIANT_PRESET: {
     readonly preset: "sss-3-compliant";
     readonly requireAllowlist: true;
     readonly transferFeeBasisPoints: 200;
-    readonly maxTransferFee: any;
+    readonly maxTransferFee: BN;
     readonly rangeProof: {
-        readonly minAmount: any;
-        readonly maxAmount: any;
+        readonly minAmount: BN;
+        readonly maxAmount: BN;
         readonly bitSize: 32 | 64;
     };
     readonly auditor: {
@@ -63,13 +63,13 @@ export declare const SSS3_COMPLIANT_PRESET: {
     };
     readonly decimals: 6;
     readonly enableConfidentialTransfers: true;
-    readonly maxConfidentialBalance: any;
+    readonly maxConfidentialBalance: BN;
     readonly enableTransferFees: true;
     readonly enablePermanentDelegate: true;
     readonly enableBlacklist: true;
     readonly transferTimeoutSeconds: 0;
 };
-export declare function createSSS3Params(name: string, symbol: string, authority: PublicKey, presetVariant?: 'default' | 'high-privacy' | 'compliant'): {
+export declare function createSSS3Params(name: string, symbol: string, authority: PublicKey, presetVariant?: "default" | "high-privacy" | "compliant"): {
     name: string;
     symbol: string;
     decimals: 6;
@@ -78,9 +78,9 @@ export declare function createSSS3Params(name: string, symbol: string, authority
     enablePermanentDelegate: true;
     enableTransferHook: true;
     requireAllowlist: boolean;
-    maxConfidentialBalance: any;
+    maxConfidentialBalance: BN;
     transferFeeBasisPoints: 100 | 200;
-    maxTransferFee: any;
+    maxTransferFee: BN;
     enableBlacklist: true;
 };
 export declare function isSSS3(features: number): boolean;

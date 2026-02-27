@@ -1,24 +1,25 @@
-import { Router } from 'express';
-import { body, validationResult } from 'express-validator';
-import { BurnService } from '../services/burnService';
-import { logger } from '../../shared/logger';
+import { Router } from "express";
+import { body, validationResult } from "express-validator";
+import { BurnService } from "../services/burnService";
+import { logger } from "../../shared/logger";
 
 const router = Router();
 const burnService = new BurnService();
 
-router.post('/',
+router.post(
+  "/",
   [
-    body('amount').isString().matches(/^\d+$/),
-    body('authority').optional().isString(),
-    body('account').optional().isString(),
+    body("amount").isString().matches(/^\d+$/),
+    body("authority").optional().isString(),
+    body("account").optional().isString(),
   ],
-  async (req, res, next) => {
+  async (req: any, res: any, next: any) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({
           success: false,
-          error: 'Validation failed',
+          error: "Validation failed",
           details: errors.array(),
         });
       }

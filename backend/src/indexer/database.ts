@@ -1,5 +1,5 @@
-import { Pool } from 'pg';
-import { logger } from '../shared/logger';
+import { Pool } from "pg";
+import { logger } from "../shared/logger";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -14,12 +14,12 @@ export const db = {
 };
 
 export async function initializeDatabase(): Promise<void> {
-  logger.info('Initializing database...');
+  logger.info("Initializing database...");
 
   const client = await pool.connect();
-  
+
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Transfers table
     await client.query(`
@@ -78,16 +78,26 @@ export async function initializeDatabase(): Promise<void> {
     `);
 
     // Create indexes
-    await client.query('CREATE INDEX IF NOT EXISTS idx_transfers_source ON transfers(source)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_transfers_destination ON transfers(destination)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_transfers_slot ON transfers(slot)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_blacklist_address ON blacklist_events(address)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_whitelist_address ON whitelist_events(address)');
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_transfers_source ON transfers(source)"
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_transfers_destination ON transfers(destination)"
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_transfers_slot ON transfers(slot)"
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_blacklist_address ON blacklist_events(address)"
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_whitelist_address ON whitelist_events(address)"
+    );
 
-    await client.query('COMMIT');
-    logger.info('Database initialized successfully');
+    await client.query("COMMIT");
+    logger.info("Database initialized successfully");
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();

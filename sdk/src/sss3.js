@@ -11,8 +11,8 @@ exports.validateSSS3Params = validateSSS3Params;
 const anchor_1 = require("@coral-xyz/anchor");
 // Default SSS-3 config
 exports.SSS3_PRESET = {
-    name: 'SSS-3 Private Stablecoin',
-    preset: 'sss-3',
+    name: "SSS-3 Private Stablecoin",
+    preset: "sss-3",
     decimals: 6,
     enableConfidentialTransfers: true,
     maxConfidentialBalance: new anchor_1.BN(0), // unlimited
@@ -36,8 +36,8 @@ exports.SSS3_PRESET = {
 // High privacy preset
 exports.SSS3_HIGH_PRIVACY_PRESET = {
     ...exports.SSS3_PRESET,
-    name: 'SSS-3 High Privacy',
-    preset: 'sss-3-high',
+    name: "SSS-3 High Privacy",
+    preset: "sss-3-high",
     requireAllowlist: true,
     maxConfidentialBalance: new anchor_1.BN(1000000000000), // 1M tokens
     auditor: {
@@ -48,8 +48,8 @@ exports.SSS3_HIGH_PRIVACY_PRESET = {
 // Compliant preset
 exports.SSS3_COMPLIANT_PRESET = {
     ...exports.SSS3_PRESET,
-    name: 'SSS-3 Compliant',
-    preset: 'sss-3-compliant',
+    name: "SSS-3 Compliant",
+    preset: "sss-3-compliant",
     requireAllowlist: true,
     transferFeeBasisPoints: 200, // 2%
     maxTransferFee: new anchor_1.BN(500000000), // 500 tokens
@@ -64,10 +64,10 @@ exports.SSS3_COMPLIANT_PRESET = {
     },
 };
 // Create init params
-function createSSS3Params(name, symbol, authority, presetVariant = 'default') {
-    const base = presetVariant === 'high-privacy'
+function createSSS3Params(name, symbol, authority, presetVariant = "default") {
+    const base = presetVariant === "high-privacy"
         ? exports.SSS3_HIGH_PRIVACY_PRESET
-        : presetVariant === 'compliant'
+        : presetVariant === "compliant"
             ? exports.SSS3_COMPLIANT_PRESET
             : exports.SSS3_PRESET;
     return {
@@ -103,38 +103,38 @@ function encodeSSS3Features() {
 function decodeSSS3Features(features) {
     const names = [];
     if (features & 1)
-        names.push('Transfer Hook');
+        names.push("Transfer Hook");
     if (features & 2)
-        names.push('Permanent Delegate');
+        names.push("Permanent Delegate");
     if (features & 4)
-        names.push('Mint Close Authority');
+        names.push("Mint Close Authority");
     if (features & 8)
-        names.push('Default Account State');
+        names.push("Default Account State");
     if (features & 16)
-        names.push('Confidential Transfers');
+        names.push("Confidential Transfers");
     if (features & 32)
-        names.push('Auditor');
+        names.push("Auditor");
     if (features & 64)
-        names.push('Allowlist Required');
+        names.push("Allowlist Required");
     return names;
 }
 // Feature descriptions
 exports.SSS3_FEATURE_DESCRIPTIONS = {
-    16: 'Confidential transfers using Token-2022 with ElGamal encryption',
-    32: 'Auditor with decryption capability for regulatory compliance',
-    64: 'Allowlist enforcement for confidential transfers',
+    16: "Confidential transfers using Token-2022 with ElGamal encryption",
+    32: "Auditor with decryption capability for regulatory compliance",
+    64: "Allowlist enforcement for confidential transfers",
 };
 // Validate params
 function validateSSS3Params(params) {
     const errors = [];
     if (params.transferFeeBasisPoints !== undefined) {
         if (params.transferFeeBasisPoints > 10000) {
-            errors.push('Transfer fee basis points must be <= 10000 (100%)');
+            errors.push("Transfer fee basis points must be <= 10000 (100%)");
         }
     }
     if (params.auditorPubkey !== undefined && params.auditorPubkey !== null) {
         if (params.auditorPubkey.toString().length !== 44) {
-            errors.push('Invalid auditor public key');
+            errors.push("Invalid auditor public key");
         }
     }
     return {
@@ -144,12 +144,12 @@ function validateSSS3Params(params) {
 }
 // Init steps
 exports.SSS3_INIT_STEPS = [
-    '1. Initialize base stablecoin (SSS-1)',
-    '2. Configure transfer hook (SSS-2)',
-    '3. Enable confidential transfers (SSS-3)',
-    '4. Create range proof verifier',
-    '5. Set auditor (optional)',
-    '6. Configure allowlist',
-    '7. Create confidential accounts',
+    "1. Initialize base stablecoin (SSS-1)",
+    "2. Configure transfer hook (SSS-2)",
+    "3. Enable confidential transfers (SSS-3)",
+    "4. Create range proof verifier",
+    "5. Set auditor (optional)",
+    "6. Configure allowlist",
+    "7. Create confidential accounts",
 ];
 exports.default = exports.SSS3_PRESET;

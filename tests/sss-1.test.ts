@@ -41,9 +41,18 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
   before(async () => {
     // Airdrop to all test accounts
     await Promise.all([
-      provider.connection.requestAirdrop(secondMinter.publicKey, 2 * LAMPORTS_PER_SOL),
-      provider.connection.requestAirdrop(recipient.publicKey, 2 * LAMPORTS_PER_SOL),
-      provider.connection.requestAirdrop(newAuthority.publicKey, 2 * LAMPORTS_PER_SOL),
+      provider.connection.requestAirdrop(
+        secondMinter.publicKey,
+        2 * LAMPORTS_PER_SOL
+      ),
+      provider.connection.requestAirdrop(
+        recipient.publicKey,
+        2 * LAMPORTS_PER_SOL
+      ),
+      provider.connection.requestAirdrop(
+        newAuthority.publicKey,
+        2 * LAMPORTS_PER_SOL
+      ),
     ]);
     // Wait for airdrops
     await new Promise((r) => setTimeout(r, 1000));
@@ -53,11 +62,19 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
       program.programId
     );
     [masterRolePDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("role"), provider.wallet.publicKey.toBuffer(), mintKeypair.publicKey.toBuffer()],
+      [
+        Buffer.from("role"),
+        provider.wallet.publicKey.toBuffer(),
+        mintKeypair.publicKey.toBuffer(),
+      ],
       program.programId
     );
     [minterInfoPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("minter"), provider.wallet.publicKey.toBuffer(), mintKeypair.publicKey.toBuffer()],
+      [
+        Buffer.from("minter"),
+        provider.wallet.publicKey.toBuffer(),
+        mintKeypair.publicKey.toBuffer(),
+      ],
       program.programId
     );
     [mintAuthorityPDA] = PublicKey.findProgramAddressSync(
@@ -110,8 +127,15 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
       assert.equal(state.decimals, decimals, "decimals should match");
       assert.equal(state.features, 0, "SSS-1 should have no features");
       assert.equal(state.isPaused, false, "should not be paused");
-      assert.equal(state.totalSupply.toNumber(), 0, "initial supply should be 0");
-      assert.ok(state.authority.equals(provider.wallet.publicKey), "authority should match");
+      assert.equal(
+        state.totalSupply.toNumber(),
+        0,
+        "initial supply should be 0"
+      );
+      assert.ok(
+        state.authority.equals(provider.wallet.publicKey),
+        "authority should match"
+      );
       assert.ok(state.mint.equals(mintKeypair.publicKey), "mint should match");
       console.log("Initialize tx:", tx);
     });
@@ -133,8 +157,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
           .rpc();
         assert.fail("Should have thrown AlreadyInitialized");
       } catch (err: any) {
-        assert.ok(err.message.includes("already in use") || err.message.includes("AlreadyInitialized"),
-          "Should throw already-initialized error");
+        assert.ok(
+          err.message.includes("already in use") ||
+            err.message.includes("AlreadyInitialized"),
+          "Should throw already-initialized error"
+        );
       }
     });
   });
@@ -192,15 +219,32 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
       console.log("Mint tx:", tx);
 
       const state = await program.account.stablecoinState.fetch(stablecoinPDA);
-      assert.equal(state.totalSupply.toNumber(), 1_000_000, "supply should be 1 token");
+      assert.equal(
+        state.totalSupply.toNumber(),
+        1_000_000,
+        "supply should be 1 token"
+      );
 
-      const account = await getAccount(provider.connection, recipientTokenAccount, "confirmed", TOKEN_2022_PROGRAM_ID);
-      assert.equal(account.amount.toString(), "1000000", "token balance should be 1 token");
+      const account = await getAccount(
+        provider.connection,
+        recipientTokenAccount,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+      assert.equal(
+        account.amount.toString(),
+        "1000000",
+        "token balance should be 1 token"
+      );
     });
 
     it("Should track epoch minting correctly", async () => {
       const state = await program.account.stablecoinState.fetch(stablecoinPDA);
-      assert.equal(state.currentEpochMinted.toNumber(), 1_000_000, "epoch minted should be tracked");
+      assert.equal(
+        state.currentEpochMinted.toNumber(),
+        1_000_000,
+        "epoch minted should be tracked"
+      );
     });
 
     it("Should mint more tokens (cumulative supply)", async () => {
@@ -211,7 +255,10 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         (provider.wallet as anchor.Wallet).payer,
         mintKeypair.publicKey,
         provider.wallet.publicKey,
-        false, "confirmed", {}, TOKEN_2022_PROGRAM_ID
+        false,
+        "confirmed",
+        {},
+        TOKEN_2022_PROGRAM_ID
       );
 
       await program.methods
@@ -229,7 +276,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         .rpc();
 
       const state = await program.account.stablecoinState.fetch(stablecoinPDA);
-      assert.equal(state.totalSupply.toNumber(), 1_500_000, "supply should accumulate");
+      assert.equal(
+        state.totalSupply.toNumber(),
+        1_500_000,
+        "supply should accumulate"
+      );
     });
 
     it("Should fail to mint with zero amount", async () => {
@@ -249,8 +300,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
           .rpc();
         assert.fail("Should have thrown InvalidAmount");
       } catch (err: any) {
-        assert.ok(err.message.includes("InvalidAmount") || err.message.includes("invalid"),
-          "Should throw invalid amount error");
+        assert.ok(
+          err.message.includes("InvalidAmount") ||
+            err.message.includes("invalid"),
+          "Should throw invalid amount error"
+        );
       }
     });
   });
@@ -261,7 +315,9 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
     it("Should burn tokens and reduce total supply", async () => {
       const burnAmount = new BN(200_000);
 
-      const stateBefore = await program.account.stablecoinState.fetch(stablecoinPDA);
+      const stateBefore = await program.account.stablecoinState.fetch(
+        stablecoinPDA
+      );
       const supplyBefore = stateBefore.totalSupply.toNumber();
 
       const tx = await program.methods
@@ -278,7 +334,9 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         .rpc();
       console.log("Burn tx:", tx);
 
-      const stateAfter = await program.account.stablecoinState.fetch(stablecoinPDA);
+      const stateAfter = await program.account.stablecoinState.fetch(
+        stablecoinPDA
+      );
       assert.equal(
         stateAfter.totalSupply.toNumber(),
         supplyBefore - 200_000,
@@ -298,7 +356,10 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         (provider.wallet as anchor.Wallet).payer,
         mintKeypair.publicKey,
         recipient.publicKey,
-        false, "confirmed", {}, TOKEN_2022_PROGRAM_ID
+        false,
+        "confirmed",
+        {},
+        TOKEN_2022_PROGRAM_ID
       );
       frozenAccount = ata.address;
     });
@@ -318,7 +379,12 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         .rpc();
       console.log("Freeze tx:", tx);
 
-      const account = await getAccount(provider.connection, frozenAccount, "confirmed", TOKEN_2022_PROGRAM_ID);
+      const account = await getAccount(
+        provider.connection,
+        frozenAccount,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
       assert.equal(account.isFrozen, true, "account should be frozen");
     });
 
@@ -337,7 +403,12 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         .rpc();
       console.log("Thaw tx:", tx);
 
-      const account = await getAccount(provider.connection, frozenAccount, "confirmed", TOKEN_2022_PROGRAM_ID);
+      const account = await getAccount(
+        provider.connection,
+        frozenAccount,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
       assert.equal(account.isFrozen, false, "account should be thawed");
     });
   });
@@ -377,8 +448,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
           .rpc();
         assert.fail("Should have thrown ContractPaused");
       } catch (err: any) {
-        assert.ok(err.message.includes("ContractPaused") || err.message.includes("paused"),
-          "Should throw paused error");
+        assert.ok(
+          err.message.includes("ContractPaused") ||
+            err.message.includes("paused"),
+          "Should throw paused error"
+        );
       }
     });
 
@@ -431,7 +505,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
       console.log("SetSupplyCap tx:", tx);
 
       const state = await program.account.stablecoinState.fetch(stablecoinPDA);
-      assert.equal(state.supplyCap.toNumber(), 2_000_000, "supply cap should be set");
+      assert.equal(
+        state.supplyCap.toNumber(),
+        2_000_000,
+        "supply cap should be set"
+      );
     });
 
     it("Should fail to mint beyond supply cap", async () => {
@@ -452,8 +530,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
           .rpc();
         assert.fail("Should have thrown SupplyCapExceeded");
       } catch (err: any) {
-        assert.ok(err.message.includes("SupplyCapExceeded") || err.message.includes("supply cap"),
-          "Should throw supply cap error");
+        assert.ok(
+          err.message.includes("SupplyCapExceeded") ||
+            err.message.includes("supply cap"),
+          "Should throw supply cap error"
+        );
       }
     });
   });
@@ -466,11 +547,19 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
 
     before(() => {
       [secondMinterRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("role"), secondMinter.publicKey.toBuffer(), mintKeypair.publicKey.toBuffer()],
+        [
+          Buffer.from("role"),
+          secondMinter.publicKey.toBuffer(),
+          mintKeypair.publicKey.toBuffer(),
+        ],
         program.programId
       );
       [secondMinterInfoPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("minter"), secondMinter.publicKey.toBuffer(), mintKeypair.publicKey.toBuffer()],
+        [
+          Buffer.from("minter"),
+          secondMinter.publicKey.toBuffer(),
+          mintKeypair.publicKey.toBuffer(),
+        ],
         program.programId
       );
     });
@@ -491,7 +580,10 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
 
       const role = await program.account.roleAccount.fetch(secondMinterRolePDA);
       assert.equal(role.role, 1, "role should be minter (1)");
-      assert.ok(role.account.equals(secondMinter.publicKey), "role account should match");
+      assert.ok(
+        role.account.equals(secondMinter.publicKey),
+        "role account should match"
+      );
     });
 
     it("Should set quota for the second minter", async () => {
@@ -509,7 +601,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         .rpc();
 
       const info = await program.account.minterInfo.fetch(secondMinterInfoPDA);
-      assert.equal(info.quota.toNumber(), 500_000, "quota should be set for second minter");
+      assert.equal(
+        info.quota.toNumber(),
+        500_000,
+        "quota should be set for second minter"
+      );
     });
   });
 
@@ -520,7 +616,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
 
     before(() => {
       [newAuthorityRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("role"), newAuthority.publicKey.toBuffer(), mintKeypair.publicKey.toBuffer()],
+        [
+          Buffer.from("role"),
+          newAuthority.publicKey.toBuffer(),
+          mintKeypair.publicKey.toBuffer(),
+        ],
         program.programId
       );
     });
@@ -540,7 +640,10 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
       console.log("TransferAuthority tx:", tx);
 
       const state = await program.account.stablecoinState.fetch(stablecoinPDA);
-      assert.ok(state.authority.equals(newAuthority.publicKey), "authority should transfer");
+      assert.ok(
+        state.authority.equals(newAuthority.publicKey),
+        "authority should transfer"
+      );
     });
   });
 
@@ -562,11 +665,19 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         program.programId
       );
       [batchMasterRolePDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("role"), provider.wallet.publicKey.toBuffer(), batchMintKeypair.publicKey.toBuffer()],
+        [
+          Buffer.from("role"),
+          provider.wallet.publicKey.toBuffer(),
+          batchMintKeypair.publicKey.toBuffer(),
+        ],
         program.programId
       );
       [batchMinterInfoPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("minter"), provider.wallet.publicKey.toBuffer(), batchMintKeypair.publicKey.toBuffer()],
+        [
+          Buffer.from("minter"),
+          provider.wallet.publicKey.toBuffer(),
+          batchMintKeypair.publicKey.toBuffer(),
+        ],
         program.programId
       );
       [batchMintAuthorityPDA] = PublicKey.findProgramAddressSync(
@@ -617,7 +728,11 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
     });
 
     it("Should batch mint to multiple recipients", async () => {
-      const recipients = [Keypair.generate(), Keypair.generate(), Keypair.generate()];
+      const recipients = [
+        Keypair.generate(),
+        Keypair.generate(),
+        Keypair.generate(),
+      ];
       const amounts = [new BN(100_000), new BN(200_000), new BN(300_000)];
 
       const atas = await Promise.all(
@@ -627,7 +742,10 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
             (provider.wallet as anchor.Wallet).payer,
             batchMintKeypair.publicKey,
             r.publicKey,
-            false, "confirmed", {}, TOKEN_2022_PROGRAM_ID
+            false,
+            "confirmed",
+            {},
+            TOKEN_2022_PROGRAM_ID
           )
         )
       );
@@ -653,13 +771,28 @@ describe("SSS Token - SSS-1 (Minimal Stablecoin)", () => {
         .rpc();
       console.log("BatchMint tx:", tx);
 
-      const state = await program.account.stablecoinState.fetch(batchStablecoinPDA);
-      assert.equal(state.totalSupply.toNumber(), 600_000, "total supply should be sum of all minted");
+      const state = await program.account.stablecoinState.fetch(
+        batchStablecoinPDA
+      );
+      assert.equal(
+        state.totalSupply.toNumber(),
+        600_000,
+        "total supply should be sum of all minted"
+      );
 
       // Verify each recipient got their tokens
       for (let i = 0; i < atas.length; i++) {
-        const account = await getAccount(provider.connection, atas[i].address, "confirmed", TOKEN_2022_PROGRAM_ID);
-        assert.equal(account.amount.toString(), amounts[i].toString(), `recipient ${i} should have correct balance`);
+        const account = await getAccount(
+          provider.connection,
+          atas[i].address,
+          "confirmed",
+          TOKEN_2022_PROGRAM_ID
+        );
+        assert.equal(
+          account.amount.toString(),
+          amounts[i].toString(),
+          `recipient ${i} should have correct balance`
+        );
       }
     });
   });

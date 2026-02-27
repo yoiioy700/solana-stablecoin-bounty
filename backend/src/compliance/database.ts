@@ -1,5 +1,5 @@
-import { Pool } from 'pg';
-import { logger } from '../shared/logger';
+import { Pool } from "pg";
+import { logger } from "../shared/logger";
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -14,12 +14,12 @@ export const db = {
 };
 
 export async function initializeDatabase(): Promise<void> {
-  logger.info('Initializing compliance database...');
+  logger.info("Initializing compliance database...");
 
   const client = await pool.connect();
-  
+
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Blacklist events table
     await client.query(`
@@ -50,13 +50,17 @@ export async function initializeDatabase(): Promise<void> {
     `);
 
     // Create indexes
-    await client.query('CREATE INDEX IF NOT EXISTS idx_blacklist_address ON blacklist_events(address)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_whitelist_address ON whitelist_events(address)');
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_blacklist_address ON blacklist_events(address)"
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_whitelist_address ON whitelist_events(address)"
+    );
 
-    await client.query('COMMIT');
-    logger.info('Compliance database initialized');
+    await client.query("COMMIT");
+    logger.info("Compliance database initialized");
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();

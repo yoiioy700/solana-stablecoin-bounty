@@ -1,5 +1,11 @@
-import { Connection, PublicKey, Keypair, TransactionInstruction, Transaction } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  TransactionInstruction,
+  Transaction,
+} from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 
 // ============================================
 // PROGRAM IDS - Updated!
@@ -10,15 +16,15 @@ import { BN } from '@coral-xyz/anchor';
  * @default "b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK"
  */
 export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
-  'b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK'
+  "b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK"
 );
 
 /**
- * SSS Transfer Hook program ID  
+ * SSS Transfer Hook program ID
  * @default "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
  */
 export const SSS_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  '97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx'
+  "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
 );
 
 // ============================================
@@ -45,12 +51,12 @@ export const ROLE_SEIZER = 32;
 
 /** Human-readable role names */
 export const ROLE_NAMES: Record<number, string> = {
-  1: 'MASTER',
-  2: 'MINTER',
-  4: 'BURNER',
-  8: 'PAUSER',
-  16: 'BLACKLISTER',
-  32: 'SEIZER',
+  1: "MASTER",
+  2: "MINTER",
+  4: "BURNER",
+  8: "PAUSER",
+  16: "BLACKLISTER",
+  32: "SEIZER",
 };
 
 // ============================================
@@ -77,40 +83,40 @@ export const FEATURE_DEFAULT_ACCOUNT_STATE = 8;
 export interface StablecoinState {
   /** Master authority */
   authority: PublicKey;
-  
+
   /** Token mint address */
   mint: PublicKey;
-  
+
   /** Token name (max 32 chars) */
   name: string;
-  
+
   /** Token symbol (max 10 chars) */
   symbol: string;
-  
+
   /** Token decimals (0-9) */
   decimals: number;
-  
+
   /** Current total supply */
   totalSupply: BN;
-  
+
   /** Emergency pause state */
   isPaused: boolean;
-  
+
   /** Feature flags bitmask */
   features: number;
-  
+
   /** Maximum supply (0 = unlimited) */
   supplyCap: BN;
-  
+
   /** Per-epoch mint limit (0 = unlimited) */
   epochQuota: BN;
-  
+
   /** Amount minted this epoch */
   currentEpochMinted: BN;
-  
+
   /** Epoch start timestamp */
   currentEpochStart: BN;
-  
+
   /** PDA bump */
   bump: number;
 }
@@ -119,13 +125,13 @@ export interface StablecoinState {
 export interface RoleAccount {
   /** Role holder address */
   owner: PublicKey;
-  
+
   /** Bitmask of assigned roles */
   roles: number;
-  
+
   /** Associated stablecoin */
   stablecoin: PublicKey;
-  
+
   /** PDA bump */
   bump: number;
 }
@@ -134,16 +140,16 @@ export interface RoleAccount {
 export interface MinterInfo {
   /** Minter address */
   minter: PublicKey;
-  
+
   /** Max mint amount allowed */
   quota: BN;
-  
+
   /** Already minted amount */
   minted: BN;
-  
+
   /** Associated stablecoin */
   stablecoin: PublicKey;
-  
+
   /** PDA bump */
   bump: number;
 }
@@ -152,13 +158,13 @@ export interface MinterInfo {
 export interface MultisigConfig {
   /** Associated stablecoin */
   stablecoin: PublicKey;
-  
+
   /** Required approvals */
   threshold: number;
-  
+
   /** Authorized signers */
   signers: PublicKey[];
-  
+
   /** PDA bump */
   bump: number;
 }
@@ -167,25 +173,25 @@ export interface MultisigConfig {
 export interface MultisigProposal {
   /** Associated config PDA */
   config: PublicKey;
-  
+
   /** Proposal creator */
   proposer: PublicKey;
-  
+
   /** Serialized instruction data */
   instructionData: Buffer;
-  
+
   /** Approvals so far */
   approvals: PublicKey[];
-  
+
   /** Whether executed */
   executed: boolean;
-  
+
   /** Creation timestamp */
   createdAt: BN;
-  
+
   /** Expiration timestamp */
   expiresAt: BN;
-  
+
   /** PDA bump */
   bump: number;
 }
@@ -198,13 +204,13 @@ export interface MultisigProposal {
 export interface SDKResult<T = any> {
   /** Operation success */
   success: boolean;
-  
+
   /** Transaction signature (if applicable) */
   signature?: string;
-  
+
   /** Returned data */
   data?: T;
-  
+
   /** Error message (if failed) */
   error?: string;
 }
@@ -381,8 +387,8 @@ export interface WhitelistEntry {
 
 /** Whitelist type */
 export enum WhitelistType {
-  FeeExempt = 'fee_exempt',
-  FullBypass = 'full_bypass',
+  FeeExempt = "fee_exempt",
+  FullBypass = "full_bypass",
 }
 
 /** Fee calculation result */
@@ -491,30 +497,32 @@ export enum TransferHookError {
 /** Decode error code to message */
 export function decodeError(code: number): string {
   const errors: Record<number, string> = {
-    [StablecoinError.Unauthorized]: 'Unauthorized: Insufficient role permissions',
-    [StablecoinError.ContractPaused]: 'Contract is paused',
-    [StablecoinError.InvalidAmount]: 'Invalid amount',
-    [StablecoinError.QuotaExceeded]: 'Minter quota exceeded',
-    [StablecoinError.RoleAlreadyAssigned]: 'Role already assigned',
-    [StablecoinError.MathOverflow]: 'Math overflow',
-    [StablecoinError.InvalidAuthority]: 'Invalid authority',
-    [StablecoinError.ComplianceNotEnabled]: 'Compliance feature not enabled',
-    [StablecoinError.AlreadyInitialized]: 'Already initialized',
-    [StablecoinError.InsufficientBalance]: 'Insufficient balance',
-    [StablecoinError.SupplyCapExceeded]: 'Supply cap exceeded',
-    [StablecoinError.EpochQuotaExceeded]: 'Epoch quota exceeded',
-    [TransferHookError.HookPaused]: 'Transfer hook paused',
-    [TransferHookError.SourceBlacklisted]: 'Source address blacklisted',
-    [TransferHookError.DestinationBlacklisted]: 'Destination address blacklisted',
-    [TransferHookError.AmountTooLow]: 'Transfer amount below minimum',
-    [TransferHookError.InvalidAuthority]: 'Invalid authority',
-    [TransferHookError.AlreadyBlacklisted]: 'Address already blacklisted',
-    [TransferHookError.BlacklistNotFound]: 'Blacklist entry not found',
-    [TransferHookError.AlreadyWhitelisted]: 'Address already whitelisted',
-    [TransferHookError.ComplianceNotEnabled]: 'Compliance not enabled',
-    [TransferHookError.SelfSeizure]: 'Cannot seize from self',
+    [StablecoinError.Unauthorized]:
+      "Unauthorized: Insufficient role permissions",
+    [StablecoinError.ContractPaused]: "Contract is paused",
+    [StablecoinError.InvalidAmount]: "Invalid amount",
+    [StablecoinError.QuotaExceeded]: "Minter quota exceeded",
+    [StablecoinError.RoleAlreadyAssigned]: "Role already assigned",
+    [StablecoinError.MathOverflow]: "Math overflow",
+    [StablecoinError.InvalidAuthority]: "Invalid authority",
+    [StablecoinError.ComplianceNotEnabled]: "Compliance feature not enabled",
+    [StablecoinError.AlreadyInitialized]: "Already initialized",
+    [StablecoinError.InsufficientBalance]: "Insufficient balance",
+    [StablecoinError.SupplyCapExceeded]: "Supply cap exceeded",
+    [StablecoinError.EpochQuotaExceeded]: "Epoch quota exceeded",
+    [TransferHookError.HookPaused]: "Transfer hook paused",
+    [TransferHookError.SourceBlacklisted]: "Source address blacklisted",
+    [TransferHookError.DestinationBlacklisted]:
+      "Destination address blacklisted",
+    [TransferHookError.AmountTooLow]: "Transfer amount below minimum",
+    [TransferHookError.InvalidAuthority]: "Invalid authority",
+    [TransferHookError.AlreadyBlacklisted]: "Address already blacklisted",
+    [TransferHookError.BlacklistNotFound]: "Blacklist entry not found",
+    [TransferHookError.AlreadyWhitelisted]: "Address already whitelisted",
+    [TransferHookError.ComplianceNotEnabled]: "Compliance not enabled",
+    [TransferHookError.SelfSeizure]: "Cannot seize from self",
   };
-  
+
   return errors[code] || `Unknown error: ${code}`;
 }
 
@@ -532,16 +540,14 @@ export function calculateFee(
   minAmount: BN
 ): FeeCalculation {
   if (amount.lt(minAmount)) {
-    throw new Error('Amount below minimum');
+    throw new Error("Amount below minimum");
   }
-  
-  const fee = amount
-    .muln(feeBps)
-    .divn(10000);
-  
+
+  const fee = amount.muln(feeBps).divn(10000);
+
   const actualFee = fee.gt(maxFee) ? maxFee : fee;
   const netAmount = amount.sub(actualFee);
-  
+
   return {
     fee: actualFee,
     netAmount,
@@ -561,11 +567,16 @@ export function hasRole(roles: number, role: number): boolean {
  */
 export function getFeatureString(feature: number): string {
   switch (feature) {
-    case 1: return 'Transfer Hook';
-    case 2: return 'Permanent Delegate';
-    case 4: return 'Mint Close Authority';
-    case 8: return 'Default Account State';
-    default: return 'Unknown';
+    case 1:
+      return "Transfer Hook";
+    case 2:
+      return "Permanent Delegate";
+    case 4:
+      return "Mint Close Authority";
+    case 8:
+      return "Default Account State";
+    default:
+      return "Unknown";
   }
 }
 
@@ -576,16 +587,16 @@ export function formatAmount(amount: BN, decimals: number): string {
   const divisor = new BN(10).pow(new BN(decimals));
   const whole = amount.div(divisor);
   const fraction = amount.mod(divisor);
-  return `${whole}.${fraction.toString().padStart(decimals, '0')}`;
+  return `${whole}.${fraction.toString().padStart(decimals, "0")}`;
 }
 
 /**
  * Parse human-readable amount to BN
  */
 export function parseAmount(amount: string, decimals: number): BN {
-  const [whole, frac = ''] = amount.split('.');
-  const fraction = frac.padEnd(decimals, '0').slice(0, decimals);
-  const wholeBN = new BN(whole || '0');
+  const [whole, frac = ""] = amount.split(".");
+  const fraction = frac.padEnd(decimals, "0").slice(0, decimals);
+  const wholeBN = new BN(whole || "0");
   const fractionBN = new BN(fraction);
   const divisor = new BN(10).pow(new BN(decimals));
   return wholeBN.mul(divisor).add(fractionBN);

@@ -74,7 +74,9 @@ export interface OracleConfig {
  */
 export function parsePythPrice(data: Buffer): PythPrice {
   if (data.length < 96) {
-    throw new Error(`Invalid Pyth price data: expected at least 96 bytes, got ${data.length}`);
+    throw new Error(
+      `Invalid Pyth price data: expected at least 96 bytes, got ${data.length}`
+    );
   }
 
   // Simplified Pyth v2 parsing
@@ -114,7 +116,9 @@ export async function fetchPythPrice(
 ): Promise<PythPrice> {
   const accountInfo = await connection.getAccountInfo(priceFeed);
   if (!accountInfo) {
-    throw new Error(`Pyth price feed account not found: ${priceFeed.toBase58()}`);
+    throw new Error(
+      `Pyth price feed account not found: ${priceFeed.toBase58()}`
+    );
   }
   return parsePythPrice(accountInfo.data);
 }
@@ -136,7 +140,9 @@ export function usdToTokenAmount(
     throw new Error("Invalid price: must be positive");
   }
   if (pythPrice.status !== PriceStatus.Trading) {
-    throw new Error(`Price feed not trading: status=${PriceStatus[pythPrice.status]}`);
+    throw new Error(
+      `Price feed not trading: status=${PriceStatus[pythPrice.status]}`
+    );
   }
 
   const tokenAmount = usdAmount / pythPrice.price;
@@ -158,7 +164,9 @@ export function tokenAmountToUsd(
   tokenDecimals: number
 ): number {
   if (pythPrice.status !== PriceStatus.Trading) {
-    throw new Error(`Price feed not trading: status=${PriceStatus[pythPrice.status]}`);
+    throw new Error(
+      `Price feed not trading: status=${PriceStatus[pythPrice.status]}`
+    );
   }
 
   const humanAmount = Number(tokenAmount) / Math.pow(10, tokenDecimals);
@@ -188,14 +196,20 @@ export function validatePrice(
 ): { valid: boolean; reason?: string } {
   // Check status
   if (price.status !== PriceStatus.Trading) {
-    return { valid: false, reason: `Price not trading: ${PriceStatus[price.status]}` };
+    return {
+      valid: false,
+      reason: `Price not trading: ${PriceStatus[price.status]}`,
+    };
   }
 
   // Check price age
   const now = Math.floor(Date.now() / 1000);
   const age = now - price.publishTime;
   if (age > config.maxPriceAge) {
-    return { valid: false, reason: `Price too stale: ${age}s > ${config.maxPriceAge}s` };
+    return {
+      valid: false,
+      reason: `Price too stale: ${age}s > ${config.maxPriceAge}s`,
+    };
   }
 
   // Check confidence
@@ -204,7 +218,9 @@ export function validatePrice(
     if (confidenceRatio > config.minConfidenceRatio) {
       return {
         valid: false,
-        reason: `Confidence too wide: ${(confidenceRatio * 100).toFixed(2)}% > ${(config.minConfidenceRatio * 100).toFixed(2)}%`,
+        reason: `Confidence too wide: ${(confidenceRatio * 100).toFixed(
+          2
+        )}% > ${(config.minConfidenceRatio * 100).toFixed(2)}%`,
       };
     }
   }
