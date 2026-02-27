@@ -176,8 +176,8 @@ solana-stablecoin-bounty/
 
 | Program | ID |
 |---|---|
-| sss_token | `b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK` |
-| sss_transfer_hook | `FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD` |
+| sss_token | `8JpbyYEJXLeWoPJcLsHWg64bDtwFZXhPoubVJPeH11aH` |
+| sss_transfer_hook | `By3BWwxkz7uFMRw1bD63VUnVMysMh79A3A6D58cHaXmB` |
 
 See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for full deployment guide and tx signatures.
 

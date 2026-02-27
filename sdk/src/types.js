@@ -20,9 +20,9 @@ const anchor_1 = require("@coral-xyz/anchor");
 exports.SSS_TOKEN_PROGRAM_ID = new web3_js_1.PublicKey('b3AxhgSuNvjsv2F4XmuXYJbBCRcTT1XPXQvRe77NbrK');
 /**
  * SSS Transfer Hook program ID
- * @default "FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD"
+ * @default "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
  */
-exports.SSS_TRANSFER_HOOK_PROGRAM_ID = new web3_js_1.PublicKey('FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD');
+exports.SSS_TRANSFER_HOOK_PROGRAM_ID = new web3_js_1.PublicKey('97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx');
 // ============================================
 // ROLE CONSTANTS
 // ============================================

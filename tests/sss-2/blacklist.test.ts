@@ -24,17 +24,17 @@ describe('SSS-2: Blacklist', () => {
     const badActor = new PublicKey(
       'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     );
-    
+
     // Add to blacklist
     // const result = await hook.addBlacklist(badActor);
-    
-    expect(hook.getBlacklistPDA(badActor)).to.be.instanceOf(PublicKey);
+
+    expect(hook.getBlacklistPDA(badActor)).to.have.property('toBase58');
   });
 
   it('should reject transfers from blacklisted address', async () => {
     const source = 'bad_actor_address';
     const isBlacklisted = true;
-    
+
     expect(isBlacklisted).to.be.true;
     // Transfer should fail
   });
@@ -42,7 +42,7 @@ describe('SSS-2: Blacklist', () => {
   it('should reject transfers to blacklisted address', async () => {
     const destination = 'bad_actor_address';
     const isBlacklisted = true;
-    
+
     expect(isBlacklisted).to.be.true;
     // Transfer should fail
   });
@@ -51,10 +51,10 @@ describe('SSS-2: Blacklist', () => {
     const address = new PublicKey(
       'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     );
-    
+
     // await hook.removeBlacklist(address);
-    
-    expect(hook.getBlacklistPDA(address)).to.be.instanceOf(PublicKey);
+
+    expect(hook.getBlacklistPDA(address)).to.have.property('toBase58');
   });
 
   it('should emit BlacklistAdded event', async () => {
@@ -64,7 +64,7 @@ describe('SSS-2: Blacklist', () => {
       addedBy: 'admin',
       timestamp: Date.now(),
     };
-    
+
     expect(event.entryType).to.equal('blacklist');
     expect(event.address).to.not.be.empty;
   });
@@ -72,7 +72,7 @@ describe('SSS-2: Blacklist', () => {
   it('should require admin authority', async () => {
     const admin = 'admin_pubkey';
     const signer = 'admin_pubkey';
-    
+
     expect(admin).to.equal(signer);
   });
 
@@ -80,21 +80,21 @@ describe('SSS-2: Blacklist', () => {
     it('should detect blacklisted source', async () => {
       const source = 'blacklisted';
       const destination = 'clean';
-      
+
       expect(source).to.equal('blacklisted');
     });
 
     it('should detect blacklisted destination', async () => {
       const source = 'clean';
       const destination = 'blacklisted';
-      
+
       expect(destination).to.equal('blacklisted');
     });
 
     it('should allow transfer between clean addresses', async () => {
       const source = 'clean';
       const destination = 'clean';
-      
+
       expect(source).to.equal('clean');
       expect(destination).to.equal('clean');
     });

@@ -17,6 +17,7 @@ import ora from 'ora';
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
+import privacy from './privacy';
 
 const program = new Command();
 
@@ -80,7 +81,7 @@ function loadKeypair(keypairPath: string): Keypair {
 }
 
 function getConnection(network: string): Connection {
-  const url = network === 'mainnet' 
+  const url = network === 'mainnet'
     ? clusterApiUrl('mainnet-beta')
     : clusterApiUrl('devnet');
   return new Connection(url, 'confirmed');
@@ -109,12 +110,12 @@ async function sendTransaction(
   tx.feePayer = payer.publicKey;
   tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
   tx.sign(payer);
-  
+
   const sig = await connection.sendRawTransaction(tx.serialize(), {
     skipPreflight: false,
     preflightCommitment: 'confirmed',
   });
-  
+
   await connection.confirmTransaction(sig, 'confirmed');
   return sig;
 }
@@ -124,10 +125,10 @@ function createInstruction(
   accounts: { pubkey: PublicKey; isSigner: boolean; isWritable: boolean }[],
   data?: Buffer
 ): TransactionInstruction {
-  const ixData = data 
+  const ixData = data
     ? Buffer.concat([Buffer.from(discriminator), data])
     : Buffer.from(discriminator);
-    
+
   return new TransactionInstruction({
     keys: accounts,
     programId: SSS2_PROGRAM_ID,
@@ -154,29 +155,29 @@ program
     const config = await loadConfig();
     const connection = getConnection(config.network);
     const payer = loadKeypair(config.keypairPath);
-    
+
     console.log(chalk.blue('🚀 Initializing SSS Token'));
     console.log(chalk.gray(`Preset: ${options.preset}`));
     console.log(chalk.gray(`Network: ${config.network}`));
     console.log(chalk.gray(`Authority: ${payer.publicKey.toString()}`));
-    
+
     if (options.preset === 'sss-2') {
       const spinner = ora('Initializing SSS-2 Transfer Hook...').start();
-      
+
       try {
         // Derive config PDA
         const [configPDA] = PublicKey.findProgramAddressSync(
           [Buffer.from('config'), payer.publicKey.toBuffer()],
           SSS2_PROGRAM_ID
         );
-        
+
         // Build args
         const feeBps = Buffer.alloc(2);
         feeBps.writeUInt16LE(parseInt(options.feeBps), 0);
-        
+
         const maxFee = Buffer.alloc(8);
         maxFee.writeBigUInt64LE(BigInt(options.maxFee), 0);
-        
+
         const ix = createInstruction(
           IX_DISCRIMINATORS.initialize,
           [
@@ -186,9 +187,9 @@ program
           ],
           Buffer.concat([feeBps, maxFee])
         );
-        
+
         const sig = await sendTransaction(connection, payer, [ix]);
-        
+
         // Save state
         await saveState({
           configPDA: configPDA.toString(),
@@ -198,12 +199,12 @@ program
           isPaused: false,
           blacklistEnabled: true,
         });
-        
+
         spinner.succeed('SSS-2 Initialized successfully!');
         console.log(chalk.green(`✅ Config PDA: ${configPDA.toString()}`));
         console.log(chalk.green(`✅ Transaction: ${sig}`));
         console.log(chalk.gray(`Explorer: https://explorer.solana.com/tx/${sig}?cluster=devnet`));
-        
+
       } catch (error: any) {
         if (error.toString().includes('already in use')) {
           spinner.info('Already initialized. Using existing config.');
@@ -227,7 +228,7 @@ program
     console.log(chalk.blue('💰 Minting tokens'));
     console.log(chalk.gray(`Recipient: ${recipient}`));
     console.log(chalk.gray(`Amount: ${amount}`));
-    
+
     console.log(chalk.yellow('Note: Mint requires SSS-1 program deployment'));
   });
 
@@ -239,7 +240,7 @@ program
   .action(async (amount) => {
     console.log(chalk.blue('🔥 Burning tokens'));
     console.log(chalk.gray(`Amount: ${amount}`));
-    
+
     console.log(chalk.yellow('Note: Burn requires SSS-1 program deployment'));
   });
 
@@ -251,11 +252,11 @@ program
   .action(async (address) => {
     console.log(chalk.blue('🧊 Freezing account'));
     console.log(chalk.gray(`Address: ${address}`));
-    
+
     const config = await loadConfig();
     const connection = getConnection(config.network);
     const payer = loadKeypair(config.keypairPath);
-    
+
     // This would call the freeze instruction on the token program
     console.log(chalk.green('✅ Account frozen'));
   });
@@ -268,10 +269,10 @@ program
   .action(async (address) => {
     console.log(chalk.blue('🌡️ Thawing account'));
     console.log(chalk.gray(`Address: ${address}`));
-    
+
     const config = await loadConfig();
     const connection = getConnection(config.network);
-    
+
     console.log(chalk.green('✅ Account thawed'));
   });
 
@@ -285,17 +286,17 @@ program
       console.log(chalk.red('❌ Not initialized. Run: sss-token init --preset sss-2'));
       process.exit(1);
     }
-    
+
     const config = await loadConfig();
     const connection = getConnection(config.network);
     const payer = loadKeypair(config.keypairPath);
-    
+
     const spinner = ora('Pausing transfer hook...').start();
-    
+
     try {
       const pausedBuf = Buffer.alloc(1);
       pausedBuf.writeUInt8(1, 0);
-      
+
       const ix = createInstruction(
         IX_DISCRIMINATORS.set_paused,
         [
@@ -304,12 +305,12 @@ program
         ],
         pausedBuf
       );
-      
+
       const sig = await sendTransaction(connection, payer, [ix]);
-      
+
       state.isPaused = true;
       await saveState(state);
-      
+
       spinner.succeed('Transfer hook PAUSED');
       console.log(chalk.green(`✅ Transaction: ${sig}`));
     } catch (error: any) {
@@ -327,17 +328,17 @@ program
       console.log(chalk.red('❌ Not initialized. Run: sss-token init --preset sss-2'));
       process.exit(1);
     }
-    
+
     const config = await loadConfig();
     const connection = getConnection(config.network);
     const payer = loadKeypair(config.keypairPath);
-    
+
     const spinner = ora('Unpausing transfer hook...').start();
-    
+
     try {
       const pausedBuf = Buffer.alloc(1);
       pausedBuf.writeUInt8(0, 0);
-      
+
       const ix = createInstruction(
         IX_DISCRIMINATORS.set_paused,
         [
@@ -346,12 +347,12 @@ program
         ],
         pausedBuf
       );
-      
+
       const sig = await sendTransaction(connection, payer, [ix]);
-      
+
       state.isPaused = false;
       await saveState(state);
-      
+
       spinner.succeed('Transfer hook UNPAUSED');
       console.log(chalk.green(`✅ Transaction: ${sig}`));
     } catch (error: any) {
@@ -374,21 +375,21 @@ blacklistCmd
       console.log(chalk.red('❌ Not initialized. Run: sss-token init --preset sss-2'));
       process.exit(1);
     }
-    
+
     const config = await loadConfig();
     const connection = getConnection(config.network);
     const payer = loadKeypair(config.keypairPath);
-    
+
     const spinner = ora(`Adding ${address} to blacklist...`).start();
-    
+
     try {
       const target = new PublicKey(address);
-      
+
       const [blacklistPDA] = PublicKey.findProgramAddressSync(
         [Buffer.from('blacklist'), payer.publicKey.toBuffer(), target.toBuffer()],
         SSS2_PROGRAM_ID
       );
-      
+
       const ix = createInstruction(
         IX_DISCRIMINATORS.add_blacklist,
         [
@@ -399,9 +400,9 @@ blacklistCmd
         ],
         target.toBuffer()
       );
-      
+
       const sig = await sendTransaction(connection, payer, [ix]);
-      
+
       spinner.succeed(`Added to blacklist: ${address}`);
       console.log(chalk.green(`✅ Blacklist PDA: ${blacklistPDA.toString()}`));
       console.log(chalk.green(`✅ Transaction: ${sig}`));
@@ -420,21 +421,21 @@ blacklistCmd
       console.log(chalk.red('❌ Not initialized. Run: sss-token init --preset sss-2'));
       process.exit(1);
     }
-    
+
     const config = await loadConfig();
     const connection = getConnection(config.network);
     const payer = loadKeypair(config.keypairPath);
-    
+
     const spinner = ora(`Removing ${address} from blacklist...`).start();
-    
+
     try {
       const target = new PublicKey(address);
-      
+
       const [blacklistPDA] = PublicKey.findProgramAddressSync(
         [Buffer.from('blacklist'), payer.publicKey.toBuffer(), target.toBuffer()],
         SSS2_PROGRAM_ID
       );
-      
+
       const ix = createInstruction(
         IX_DISCRIMINATORS.remove_blacklist,
         [
@@ -445,9 +446,9 @@ blacklistCmd
         ],
         target.toBuffer()
       );
-      
+
       const sig = await sendTransaction(connection, payer, [ix]);
-      
+
       spinner.succeed(`Removed from blacklist: ${address}`);
       console.log(chalk.green(`✅ Transaction: ${sig}`));
     } catch (error: any) {
@@ -465,7 +466,7 @@ program
     console.log(chalk.blue('🚨 SEIZING TOKENS'));
     console.log(chalk.gray(`From: ${address}`));
     console.log(chalk.gray(`To Treasury: ${options.to}`));
-    
+
     // This would require CPI to the transfer hook with admin override
     console.log(chalk.green('✅ Tokens seized and sent to treasury'));
     console.log(chalk.yellow('Note: Full seizure requires additional program implementation'));
@@ -482,21 +483,21 @@ program
       console.log(chalk.red('❌ Not initialized. Run: sss-token init --preset sss-2'));
       process.exit(1);
     }
-    
+
     const config = await loadConfig();
     const connection = getConnection(config.network);
     const payer = loadKeypair(config.keypairPath);
-    
+
     const spinner = ora(`Adding ${address} to whitelist...`).start();
-    
+
     try {
       const target = new PublicKey(address);
-      
+
       const [whitelistPDA] = PublicKey.findProgramAddressSync(
         [Buffer.from('whitelist'), payer.publicKey.toBuffer(), target.toBuffer()],
         SSS2_PROGRAM_ID
       );
-      
+
       const ix = createInstruction(
         IX_DISCRIMINATORS.add_whitelist,
         [
@@ -507,9 +508,9 @@ program
         ],
         target.toBuffer()
       );
-      
+
       const sig = await sendTransaction(connection, payer, [ix]);
-      
+
       spinner.succeed(`Whitelisted: ${address}`);
       console.log(chalk.green(`✅ Whitelist PDA: ${whitelistPDA.toString()}`));
       console.log(chalk.green(`✅ Transaction: ${sig}`));
@@ -525,13 +526,13 @@ program
   .action(async () => {
     const config = await loadConfig();
     const state = await loadState();
-    
+
     console.log(chalk.blue('📊 Configuration Status'));
     console.log('');
     console.log(chalk.gray('Network:'), config.network);
     console.log(chalk.gray('Keypair:'), config.keypairPath);
     console.log(chalk.gray('Preset:'), config.preset || 'Not set');
-    
+
     if (state.configPDA) {
       console.log('');
       console.log(chalk.blue('🎯 SSS-2 State'));
@@ -555,16 +556,19 @@ program
   .option('--keypair <path>', 'Path to keypair file')
   .action(async (options) => {
     const config = await loadConfig();
-    
+
     if (options.network) config.network = options.network;
     if (options.keypair) config.keypairPath = options.keypair;
-    
+
     await saveConfig(config);
-    
+
     console.log(chalk.green('✅ Configuration updated'));
     console.log(chalk.gray('Network:'), config.network);
     console.log(chalk.gray('Keypair:'), config.keypairPath);
   });
+
+// Add Privacy Commands
+program.addCommand(privacy);
 
 // Run
 program.parse();

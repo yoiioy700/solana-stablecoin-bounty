@@ -209,7 +209,7 @@ pub struct MultisigProposalExecuted {
 }
 
 // === PROGRAM ===
-declare_id!("8pgWR8CtoBFQVZt1uufDciegkFSetKr3WmXA2QCyGgx2");
+declare_id!("8JpbyYEJXLeWoPJcLsHWg64bDtwFZXhPoubVJPeH11aH");
 
 #[program]
 pub mod sss_token {
