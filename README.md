@@ -7,7 +7,7 @@
 
 Production-ready stablecoin framework using Solana Token-2022. Built from the ground up to support everything from simple internal tokens (SSS-1) to fully regulated, compliance-heavy stablecoins (SSS-2), all the way to privacy-preserving confidential transfers (SSS-3).
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Clone
@@ -24,7 +24,7 @@ anchor test
 anchor deploy --provider.cluster devnet
 ```
 
-## 📦 What's inside? (The Presets)
+## What's inside? (The Presets)
 
 Instead of forcing you to build everything from scratch, I've bundled the features into three main presets you can pick from when initializing your token:
 
@@ -127,7 +127,7 @@ solana-stablecoin-bounty/
     └── test.yml                 # Test automation
 ```
 
-## 🛠️ The Tech Stack
+## The Tech Stack
 
 I didn't just build the smart contracts; this is a full end-to-end framework.
 
@@ -230,7 +230,7 @@ See [docs/TESTING.md](./docs/TESTING.md) for complete test guide.
 | [TESTING.md](./docs/TESTING.md) | Testing guide |
 | [REQUIREMENTS_TRACEABILITY.md](./docs/REQUIREMENTS_TRACEABILITY.md) | Requirements matrix |
 
-## 🔒 Security Posture
+## Security Posture
 
 Security isn't an afterthought here. Every sensitive operation requires role verification. If things go south, there's an emergency `pause` circuit breaker. If an account gets compromised, the permanent delegate extension allows authorized roles to seize and recover funds. Plus, every action emits on-chain events that the webhook dispatcher catches for your audit logs.
 

@@ -105,7 +105,7 @@ Commands: `init`, `mint`, `burn`, `freeze`, `thaw`, `pause`, `unpause`, `blackli
 - WebSocket event subscriptions
 - Docker-ready
 
-### 🧪 Test Coverage
+### Test Coverage
 I didn't skimp on the tests. There are over 40+ tests completely validating the logic:
 *   **SSS-1 (26 tests)**: Covers initialization, mint quotas, role enforcement, freeze/thaw states, and supply cap math.
 *   **SSS-2 (15+ tests)**: Validates the transfer hook deeply. We check blacklist blocking, permanent delegate seizures, hook configuration updates, and whitelist bypass scenarios.
@@ -136,7 +136,7 @@ cd backend && npm install && npm start
 1. SSS-3 confidential transfers: `PrivacyModule` provides `deposit` and `applyPending` helpers. Full ZK proof generation requires an off-chain proof service.
 2. Devnet deployment: programs not yet deployed to devnet (deployment workflow configured in CI).
 
-## 🏆 Bounty Alignment Checklist
+## Bounty Alignment Checklist
 
 I've made sure to hit every single requirement for the bounty:
 - **Presets**: SSS-1 (Minimal) and SSS-2 (Compliant) are fully implemented on Token-2022.
