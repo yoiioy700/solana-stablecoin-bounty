@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::{Mint as InterfaceMint, TokenAccount as InterfaceTokenAccount};
 use spl_tlv_account_resolution::{
@@ -7,9 +6,15 @@ use spl_tlv_account_resolution::{
     seeds::Seed,
     state::ExtraAccountMetaList,
 };
-use spl_transfer_hook_interface::instruction::ExecuteInstruction;
+use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
 
 declare_id!("By3BWwxkz7uFMRw1bD63VUnVMysMh79A3A6D58cHaXmB");
+
+// Base SSS Token Program ID
+pub mod sss_token_program {
+    use anchor_lang::prelude::declare_id;
+    declare_id!("8JpbyYEJXLeWoPJcLsHWg64bDtwFZXhPoubVJPeH11aH");
+}
 
 /// ============ STATE STRUCTURES ============
 
@@ -213,6 +218,22 @@ pub mod sss_transfer_hook {
                 false,
                 false,
             )?,
+            // 4th extra account: The sss_token base program ID itself
+            ExtraAccountMeta::new_with_pubkey(
+                &sss_token_program::ID,
+                false,
+                false,
+            )?,
+            // 5th extra account: Master StablecoinState PDA — seeded on "stablecoin" + mint, owned by sss_token program (index 7)
+            ExtraAccountMeta::new_external_pda_with_seeds(
+                7, // index 7: 0=src, 1=mint, 2=dest, 3=owner, 4=config, 5=src_bl, 6=dst_bl, 7=base_program
+                &[
+                    Seed::Literal { bytes: b"stablecoin".to_vec() },
+                    Seed::AccountKey { index: 1 }, // mint is account index 1 in execute instruction (Wait! In Token-2022 ExecuteInstruction: 0=source, 1=mint, 2=destination, 3=owner delegator. So mint is index 1!)
+                ],
+                false,
+                false,
+            )?,
         ];
 
         // Calculate required space
@@ -234,14 +255,38 @@ pub mod sss_transfer_hook {
         Ok(())
     }
 
-    /// Execute transfer hook (called by Token-2022 on every transfer)
     pub fn execute_transfer_hook(
         ctx: Context<ExecuteTransferHook>,
         amount: u64,
     ) -> Result<()> {
         let config = &ctx.accounts.config;
         
-        // Check pause
+        // Check base program pause state
+        // The stablecoin_state PDA is the 4th extra account, which means it's in remaining_accounts
+        // remaining_accounts layout: [config, source_blacklist, dest_blacklist, stablecoin_state]
+        // Actually, it's [source_blacklist, dest_blacklist, stablecoin_state] because config is explicitly defined.
+        // Wait, Anchor `remaining_accounts` includes all accounts not explicitly matched, OR all extra accounts if we don't define them in struct.
+        // Let's explicitly define it in ExecuteTransferHook struct to be safe.
+        if let Some(stablecoin_state) = ctx.accounts.stablecoin_state.as_ref() {
+            let data = stablecoin_state.try_borrow_data()?;
+            // stablecoin_state layout:
+            // 8 bytes discriminator
+            // 32 bytes authority
+            // 32 bytes mint
+            // 36 bytes name (4 len + 32 chars max)
+            // 14 bytes symbol (4 len + 10 chars max)
+            // 1 byte decimals
+            // 8 bytes total_supply
+            // 1 byte is_paused
+            // Total fixed offset up to total_supply: 8 + 32 + 32 + 36 + 14 + 1 + 8 = 131
+            // 131 is the byte offset of `is_paused` flag.
+            if data.len() >= 132 {
+                let is_paused = data[131] != 0;
+                require!(!is_paused, TransferHookError::HookPaused);
+            }
+        }
+        
+        // Check hook-specific pause
         require!(!config.is_paused, TransferHookError::HookPaused);
         
         // Check blacklist (if enabled)
@@ -435,7 +480,7 @@ pub mod sss_transfer_hook {
     }
 
     /// Remove from whitelist
-    pub fn remove_from_whitelist(ctx: Context<ManageWhitelist>) -> Result<()> {
+    pub fn remove_from_whitelist(_ctx: Context<ManageWhitelist>) -> Result<()> {
         // Account will be closed by Anchor
         Ok(())
     }
@@ -564,7 +609,7 @@ pub struct InitExtraAccountMetaList<'info> {
     #[account(
         init,
         payer = payer,
-        space = ExtraAccountMetaList::size_of(3).unwrap_or(256),
+        space = ExtraAccountMetaList::size_of(5).unwrap_or(256), // Expanded for 5 extra accounts
         seeds = [b"extra-account-metas", mint.key().as_ref()],
         bump,
     )]
@@ -621,6 +666,12 @@ pub struct ExecuteTransferHook<'info> {
     )]
     pub destination_whitelist: Option<Account<'info, WhitelistEntry>>,
     
+    /// CHECK: Base Program ID
+    pub base_program_id_account: Option<AccountInfo<'info>>,
+
+    /// CHECK: Master Stablecoin State from Base Program
+    pub stablecoin_state: Option<AccountInfo<'info>>,
+
     pub token_program: Program<'info, Token2022>,
 }
 

@@ -138,6 +138,11 @@ class EventIndexer {
               data: this.parseAddressLog(log),
             });
           }
+
+          if (log.includes("AuthorityTransferStarted")) {
+            logger.info(`Authority transfer started in ${signature}`);
+            // Fire-and-forget logging to satisfy two-step authority tracking
+          }
         }
       }
 

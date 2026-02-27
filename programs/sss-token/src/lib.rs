@@ -18,6 +18,7 @@ pub struct StablecoinState {
     pub epoch_quota: u64,            // Per-epoch mint limit
     pub current_epoch_minted: u64,   // This epoch minted amount
     pub current_epoch_start: i64,    // Epoch start timestamp
+    pub pending_authority: Option<Pubkey>, // Two-step transfer target
     pub bump: u8,                    // PDA bump
 }
 
@@ -171,6 +172,13 @@ pub struct MinterQuotaUpdated {
 }
 
 #[event]
+pub struct AuthorityTransferStarted {
+    pub previous_authority: Pubkey,
+    pub pending_authority: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
 pub struct AuthorityTransferred {
     pub previous_authority: Pubkey,
     pub new_authority: Pubkey,
@@ -241,6 +249,7 @@ pub mod sss_token {
         stablecoin.epoch_quota = 0;         // 0 = unlimited
         stablecoin.current_epoch_minted = 0;
         stablecoin.current_epoch_start = Clock::get()?.unix_timestamp;
+        stablecoin.pending_authority = None;
         if enable_transfer_hook {
             stablecoin.features |= 1;
         }
@@ -586,12 +595,37 @@ pub mod sss_token {
             StablecoinError::InvalidAuthority
         );
 
+        let pending = ctx.accounts.new_authority.key();
+        stablecoin.pending_authority = Some(pending);
+
+        emit!(AuthorityTransferStarted {
+            previous_authority: stablecoin.authority,
+            pending_authority: pending,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+
+        Ok(())
+    }
+
+    // === ACCEPT AUTHORITY ===
+    pub fn accept_authority(ctx: Context<AcceptAuthority>) -> Result<()> {
+        let stablecoin = &mut ctx.accounts.stablecoin_state;
+        
+        let pending = stablecoin.pending_authority
+            .ok_or(StablecoinError::InvalidAuthority)?;
+            
+        require!(
+            ctx.accounts.pending_authority.key() == pending,
+            StablecoinError::InvalidAuthority
+        );
+
         let previous_authority = stablecoin.authority;
-        stablecoin.authority = ctx.accounts.new_authority.key();
+        stablecoin.authority = ctx.accounts.pending_authority.key();
+        stablecoin.pending_authority = None;
 
         emit!(AuthorityTransferred {
             previous_authority,
-            new_authority: ctx.accounts.new_authority.key(),
+            new_authority: ctx.accounts.pending_authority.key(),
             timestamp: Clock::get()?.unix_timestamp,
         });
 
@@ -1123,11 +1157,19 @@ pub struct UpdateMinterQuota<'info> {
 pub struct TransferAuthority<'info> {
     pub authority: Signer<'info>,
     
+    /// CHECK: New authority address
+    pub new_authority: AccountInfo<'info>,
+    
     #[account(mut)]
     pub stablecoin_state: Account<'info, StablecoinState>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptAuthority<'info> {
+    pub pending_authority: Signer<'info>,
     
-    /// CHECK: New authority account
-    pub new_authority: AccountInfo<'info>,
+    #[account(mut)]
+    pub stablecoin_state: Account<'info, StablecoinState>,
 }
 
 #[derive(Accounts)]

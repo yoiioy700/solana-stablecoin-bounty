@@ -2,7 +2,13 @@
 
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Shield, Activity, Coins, LockKeyhole, ArrowRightLeft } from "lucide-react";
+import {
+  Shield,
+  Activity,
+  Coins,
+  LockKeyhole,
+  ArrowRightLeft,
+} from "lucide-react";
 
 export default function Home() {
   const { connection } = useConnection();
@@ -19,7 +25,9 @@ export default function Home() {
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
               SSS Admin Terminal
             </h1>
-            <p className="text-sm text-slate-400">Solana Stablecoin Standard • Target: Devnet</p>
+            <p className="text-sm text-slate-400">
+              Solana Stablecoin Standard • Target: Devnet
+            </p>
           </div>
         </div>
         <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-500 !transition-colors !rounded-lg" />
@@ -35,17 +43,26 @@ export default function Home() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-slate-400">Provider</span>
-              <span className="font-mono text-sm bg-slate-800 px-2 py-1 rounded">@solana/web3.js</span>
+              <span className="font-mono text-sm bg-slate-800 px-2 py-1 rounded">
+                @solana/web3.js
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-400">Endpoint</span>
-              <span className="text-sm truncate max-w-[150px]" title={connection.rpcEndpoint}>
+              <span
+                className="text-sm truncate max-w-[150px]"
+                title={connection.rpcEndpoint}
+              >
                 {connection.rpcEndpoint}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-400">Wallet</span>
-              <span className={`text-sm ${connected ? "text-emerald-400" : "text-amber-400"}`}>
+              <span
+                className={`text-sm ${
+                  connected ? "text-emerald-400" : "text-amber-400"
+                }`}
+              >
                 {connected ? "Connected" : "Disconnected"}
               </span>
             </div>
@@ -94,6 +111,11 @@ export default function Home() {
 
       <footer className="mt-20 text-center text-slate-500 text-sm">
         Built with Anchor • Token-2022 • Next.js 15
+        <br />
+        <span className="text-xs text-slate-600 mt-2 block">
+          (Note: This is a UI Mockup. Full functionality is available via CLI &
+          Admin TUI)
+        </span>
       </footer>
     </div>
   );
